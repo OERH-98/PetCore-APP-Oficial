@@ -1,0 +1,46 @@
+/* ==========================================================================
+   PetCore — Tema OSCURO
+   Mismas variables que tema_claro.css, con los valores oscuros -- se
+   intercambian por completo (nunca los dos <link> a la vez). Para ajustar
+   un color del modo oscuro, este es el único archivo que hace falta tocar.
+   ========================================================================== */
+:root{
+  color-scheme: dark;
+
+  --pc-azul:        #5B9BFF;
+  --pc-azul-oscuro: #1C3D6B;
+  --pc-azul-claro:  #1B2C42;
+  --pc-fondo:       #10141B;
+  --pc-superficie:  #1B212B;
+  --pc-texto:       #E8EAED;
+  --pc-texto-suave: #9AA4B2;
+  --pc-texto-fuerte: #DCE6F5;
+  --pc-borde:       #2B323D;
+
+  --pc-ok:      #4FC98A;
+  --pc-aviso:   #E79A3E;
+  --pc-critico: #E3726C;
+
+  --pc-badge-neutral-fondo: #262B33;
+  --pc-badge-ok-fondo:      rgba(46,158,107,.18);
+  --pc-badge-aviso-fondo:   rgba(217,130,24,.18);
+  --pc-badge-critico-fondo: rgba(206,75,69,.18);
+
+  --pc-skeleton-base:   #262B33;
+  --pc-skeleton-brillo: #333A44;
+
+  --pc-acceso-glow: #171B22;
+
+  --pc-institucional-overlay-rgb: 16, 20, 27;
+
+  --bs-primary:     var(--pc-azul);
+  --bs-primary-rgb: 91, 155, 255;
+  --bs-body-color:  var(--pc-texto);
+  --bs-body-bg:     var(--pc-fondo);
+  --bs-border-color:var(--pc-borde);
+  --bs-tertiary-bg: var(--pc-fondo);
+  --bs-link-color:  var(--pc-azul);
+  --bs-link-hover-color: var(--pc-texto-fuerte);
+  --bs-secondary-color: var(--pc-texto-suave);
+  --bs-secondary-bg: var(--pc-azul-claro);
+}

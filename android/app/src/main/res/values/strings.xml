@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PetCore</string>
+    <string name="title_activity_main">PetCore</string>
+    <string name="package_name">com.petcore.app.oficial</string>
+    <string name="custom_url_scheme">com.petcore.app.oficial</string>
+</resources>

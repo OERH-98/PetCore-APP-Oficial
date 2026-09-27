@@ -1,0 +1,80 @@
+/* --------------------------------------------------------------------------
+   Header superior fijo
+   -------------------------------------------------------------------------- */
+.pc-header{
+  position: fixed; inset: 0 0 auto 0; z-index: 1030;
+  height: var(--pc-header-alto);
+  background: var(--pc-azul);
+  box-shadow: 0 2px 12px rgba(28,61,107,.18);
+}
+.pc-header-inner{
+  height: 100%;
+  max-width: 720px; margin-inline: auto;
+  padding-inline: .75rem;
+  display: grid;
+  grid-template-columns: minmax(44px, auto) 1fr 44px;
+  align-items: center;
+  gap: .5rem;
+}
+.pc-header-logo{ display:block; }
+.pc-header-logo img{ height: 36px; width: auto; max-width: none; display: block; }
+.pc-header-titulo{
+  grid-column: 2;
+  text-align: center;
+  color: #fff;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pc-header-btn{
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 10px;
+  background: rgba(255,255,255,.14);
+  color: #fff; text-decoration: none;
+}
+.pc-header-btn:hover, .pc-header-btn:focus{ background: rgba(255,255,255,.26); color:#fff; }
+
+/* Header apilado: logo centrado arriba y el indicador de página (título)
+   debajo, también centrado -- en vez de ir uno junto al otro en la misma
+   fila. Se usa en las páginas "raíz" del portal (dashboard, mascotas,
+   citas, perfil), que muestran el logo en vez de un botón de volver.
+
+   BUG QUE ESTO CORRIGE: ".pc-header--apilado" (sin más) también matcheaba
+   el <body>, que carga esa misma clase para la regla de padding-top de
+   más abajo -- ambos elementos comparten la clase por razones distintas.
+   Como "height" no es un selector descendiente, ese "height: 76px" se le
+   aplicaba también al <body> entero, capando toda la página a la altura
+   del header y rompiendo el scroll (el botón de abajo quedaba enterrado
+   detrás de la barra inferior, sin forma de llegar a él). Se escribe
+   junto con ".pc-header" (que solo tiene el <header>) para que quede sin
+   ambigüedad. */
+.pc-header.pc-header--apilado{ height: var(--pc-header-alto-logo); }
+.pc-header--apilado .pc-header-inner{
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: .15rem;
+}
+.pc-header--apilado .pc-header-logo img{ height: 26px; }
+.pc-header--apilado .pc-header-titulo{
+  grid-column: auto;
+  max-width: 90%;
+  font-size: .78rem;
+  font-weight: 600;
+  opacity: .9;
+}
+body.pc-con-header.pc-header--apilado{ padding-top: var(--pc-header-alto-logo); }
+
+/* Compensación de la altura del header y de la barra inferior */
+body.pc-con-header{ padding-top: var(--pc-header-alto); }
+/* !important porque esta clase casi siempre va junto a un "py-4" u otro
+   utilitario de espaciado de Bootstrap en el mismo <main> -- y esos
+   utilitarios se compilan con !important (para poder pisar cualquier
+   estilo de componente), así que sin esto perdían siempre contra
+   "padding-bottom" y la barra inferior tapaba el último botón de la
+   página, sin importar cuánto se hiciera scroll. */
+.bottom-nav-spacer{
+  padding-bottom: calc(var(--pc-nav-alto) + 24px + env(safe-area-inset-bottom, 0px)) !important;
+}

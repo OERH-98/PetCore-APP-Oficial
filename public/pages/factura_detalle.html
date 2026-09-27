@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script src="../js/controllers/fetch_con_credenciales.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2D60A1">
+  <meta name="description" content="Detalle de tu factura o comprobante de PetCore.">
+  <title>Detalle de factura | PetCore</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <!-- Tipografías -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Tema (claro/oscuro/sistema): DESPUÉS de Bootstrap para poder sobreponer
+       sus variables --bs-* y ANTES de style.css / que pinte nada. -->
+  <script src="../js/services/sesion_temprana_service.js"></script>
+  <script src="../js/controllers/tema_temprano.js"></script>
+  <!-- Estilos propios -->
+  <link href="../css/style.css" rel="stylesheet">
+  <!-- Animaciones (Preferencias > Accesibilidad puede desactivarlas) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body class="pc-con-header">
+
+  <!-- ================== HEADER SUPERIOR ================== -->
+  <header class="pc-header">
+    <div class="pc-header-inner">
+      <a class="pc-header-btn" href="facturas.html" aria-label="Volver atrás">
+        <i class="fa fa-arrow-left"></i>
+      </a>
+      <h1 class="pc-header-titulo skeleton skeleton-claro skeleton-texto" id="pcTituloHeader">Factura</h1>
+      <span aria-hidden="true"></span>
+    </div>
+  </header>
+
+  <!-- ================== CONTENIDO ================== -->
+  <main class="container pc-lienzo py-4">
+
+    <!-- Se arma desde js/controllers/factura_detalle_controller.js -- todo
+         lo que hay adentro de este section es justo lo que se exporta a
+         PDF (generarPdfDesdeElemento lee esta tabla real y la dibuja como
+         tabla vectorial de verdad, no como texto plano). -->
+    <section class="pc-card p-3 p-sm-4 mb-4 animate__animated animate__fadeInUp animate__faster" id="pcFacturaContenido" aria-live="polite">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <span class="pc-eyebrow d-block skeleton skeleton-claro skeleton-texto" id="pcFacturaNumero" style="width:140px">Comprobante</span>
+          <p class="pc-meta mb-0 mt-1 skeleton skeleton-claro skeleton-texto" id="pcFacturaFecha" style="width:180px">Fecha</p>
+        </div>
+        <span id="pcFacturaEstado"></span>
+      </div>
+
+      <div class="mb-3" id="pcFacturaDatos">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="pc-meta">Método de pago</span>
+          <span class="skeleton skeleton-claro skeleton-texto" style="width:90px"></span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span class="pc-meta">Atendido por</span>
+          <span class="skeleton skeleton-claro skeleton-texto" style="width:120px"></span>
+        </div>
+      </div>
+
+      <h2 class="pc-eyebrow mb-2">Ítems facturados</h2>
+      <div class="table-responsive mb-1">
+        <table class="table pc-factura-tabla">
+          <thead>
+            <tr>
+              <th>Producto / Servicio</th>
+              <th class="text-center">Cant.</th>
+              <th class="text-end">P. Unit.</th>
+              <th class="text-end">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody id="pcFacturaItems">
+            <tr><td colspan="4"><div class="skeleton skeleton-claro skeleton-texto"></div></td></tr>
+          </tbody>
+          <tfoot id="pcFacturaTotales"></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <button type="button" class="btn btn-primary w-100 mb-4" id="pcBtnDescargarFactura" disabled>
+      <i class="fa-solid fa-download me-1"></i>Descargar PDF
+    </button>
+
+    <div style="height:16px"></div>
+  </main>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script type="module" src="../js/controllers/factura_detalle_controller.js"></script>
+</body>
+</html>

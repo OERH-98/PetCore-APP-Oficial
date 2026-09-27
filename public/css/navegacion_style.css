@@ -1,0 +1,60 @@
+/* --------------------------------------------------------------------------
+   Navegación inferior fija (5 pestañas)
+   -------------------------------------------------------------------------- */
+.pc-bottomnav{
+  position: fixed; inset: auto 0 0 0; z-index: 1030;
+  background: var(--pc-superficie);
+  border-top: 1px solid var(--pc-borde);
+  box-shadow: 0 -2px 16px rgba(28,61,107,.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pc-bottomnav-inner{
+  max-width: 720px; margin-inline: auto;
+  height: var(--pc-nav-alto);
+  display: grid; grid-template-columns: repeat(5, 1fr);
+}
+.pc-bottomnav-item{
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .2rem;
+  text-decoration: none;
+  color: var(--pc-texto-suave);
+  font-size: .68rem; font-weight: 600;
+  border-top: 3px solid transparent;
+  transition: color .15s ease;
+}
+.pc-bottomnav-item i{ font-size: 1.1rem; }
+.pc-bottomnav-item:hover{ color: var(--pc-azul); }
+.pc-bottomnav-item.active{ color: var(--pc-azul); border-top-color: var(--pc-azul); }
+
+/* Ícono con badge (pestaña Notificaciones) */
+.pc-bottomnav-icono{ position: relative; display: inline-flex; }
+.pc-bottomnav-badge{
+  position: absolute; top: -5px; right: -8px;
+  min-width: 15px; height: 15px; padding: 0 3px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--pc-critico); color: #fff;
+  font-size: .6rem; font-weight: 700; line-height: 1;
+}
+
+/* Botón flotante (FAB) */
+.pc-fab{
+  position: fixed;
+  right: 1rem;
+  bottom: calc(var(--pc-nav-alto) + 16px + env(safe-area-inset-bottom, 0px));
+  z-index: 1035;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--pc-azul); color: #fff;
+  font-size: 1.35rem;
+  text-decoration: none;
+  box-shadow: 0 8px 22px rgba(28,61,107,.35);
+  transition: transform .15s ease, background-color .15s ease;
+}
+.pc-fab:hover, .pc-fab:focus{ background: var(--pc-azul-oscuro); color:#fff; transform: translateY(-2px); }
+/* En páginas sin barra inferior el FAB baja al borde de la pantalla */
+.pc-fab-sin-nav{ bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+
+/* Ancho de lectura tipo app en escritorio */
+.pc-lienzo{ max-width: 720px; }

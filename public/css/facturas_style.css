@@ -1,0 +1,87 @@
+/* --------------------------------------------------------------------------
+   Total destacado en facturas
+   -------------------------------------------------------------------------- */
+.pc-total{
+  font-family:"Plus Jakarta Sans", sans-serif;
+  font-size: 2rem; font-weight: 800; line-height:1;
+  color: var(--pc-texto-fuerte);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   Detalle de factura (modal de facturas_controller.js) -- líneas tipo
+   "recibo" en vez de una <table> de Bootstrap: la tabla se apoyaba en los
+   colores por defecto de Bootstrap (--bs-table-color/--bs-table-bg), que
+   este proyecto nunca remapeó a los tokens del tema, así que en oscuro
+   salía prácticamente ilegible -- y con 4 columnas angostas, los
+   encabezados ("Cant.", "Subtotal") se cortaban en el ancho del modal.
+   Con filas propias, todo el color sale de las mismas variables que ya
+   cambian solas entre tema_claro.css / tema_oscuro.css.
+   -------------------------------------------------------------------------- */
+.pc-factura-item{
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--pc-borde);
+}
+.pc-factura-item:last-child{ border-bottom: none; }
+.pc-factura-item-nombre{
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--pc-texto);
+}
+.pc-factura-item-detalle{
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .5rem;
+  margin-top: 2px;
+  font-size: .82rem;
+  color: var(--pc-texto-suave);
+}
+.pc-factura-item-subtotal{
+  font-weight: 600;
+  color: var(--pc-texto);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Tabla de ítems en factura_detalle.html -- esta sí es una <table> real:
+   ahora que el detalle vive en su propia página (no en el modal angosto de
+   400px de antes), hay espacio de sobra para las columnas. Solo hacía
+   falta remapear sus colores a los tokens del tema -- Bootstrap nunca los
+   tenía enlazados (ver el comentario de arriba sobre por qué el detalle
+   EN EL MODAL usaba filas propias en vez de tabla).
+   -------------------------------------------------------------------------- */
+.pc-factura-tabla{
+  --bs-table-color: var(--pc-texto);
+  --bs-table-bg: var(--pc-superficie);
+  --bs-table-border-color: var(--pc-borde);
+  --bs-table-striped-bg: var(--pc-fondo);
+  font-size: .85rem;
+  margin-bottom: 0;
+}
+.pc-factura-tabla thead th{
+  background: var(--bs-primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: .74rem;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  border-bottom: none;
+  white-space: nowrap;
+}
+.pc-factura-tabla tbody td{
+  vertical-align: middle;
+  color: var(--pc-texto);
+}
+.pc-factura-tabla tfoot td{
+  border-top: 2px solid var(--pc-borde);
+  border-bottom: none;
+  font-weight: 600;
+  color: var(--pc-texto-suave);
+}
+.pc-factura-tabla tfoot tr:last-child td{
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--pc-texto-fuerte);
+}

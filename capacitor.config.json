@@ -1,0 +1,15 @@
+{
+  "appId": "com.petcore.app.oficial",
+  "appName": "PetCore",
+  "webDir": "dist",
+  "plugins": {
+    "SocialLogin": {
+      "providers": {
+        "google": true,
+        "facebook": false,
+        "apple": false,
+        "twitter": false
+      }
+    }
+  }
+}

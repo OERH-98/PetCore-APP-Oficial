@@ -1,0 +1,42 @@
+/* ==========================================================================
+   PetCore — Variables globales ESTRUCTURALES (radios, sombras, alturas)
+   Los colores YA NO viven aquí: cada tema es un archivo CSS aparte que se
+   intercambia por completo (swap del <link>, ver tema_temprano.js /
+   tema_temprano_login.js) -- ver css/tema_claro.css y css/tema_oscuro.css.
+   Así, para tocar un color de un tema basta con editar SU archivo, sin
+   tener que perseguir bloques @media/[data-theme] repartidos.
+   ========================================================================== */
+/* Registrada como <number> para que sea interpolable: sin @property el
+   navegador no anima una custom property, así que el velo institucional
+   saltaba de golpe a la nueva opacidad apenas se soltaba el slider de
+   Preferencias en vez de deslizarse hasta ahí (aplicarOpacidadFondoInstitucional()
+   en apariencia_utils.js solo cambia el valor -- la animación la da por
+   completo esta transición, declarada en :root porque ahí es donde JS
+   escribe el valor por estilo en línea). */
+@property --pc-institucional-overlay-alpha {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.55;
+}
+
+:root{
+  --pc-radio:  12px;
+  --pc-sombra: 0 1px 2px rgba(28,61,107,.06), 0 6px 20px rgba(28,61,107,.07);
+
+  --pc-header-alto:      56px;
+  --pc-header-alto-logo: 76px;
+  --pc-nav-alto:    64px;
+
+  /* Opacidad del velo sobre la imagen institucional (Preferencias >
+     Apariencia): valor por defecto antes de que utils.js aplique la
+     preferencia real del propietario en línea. */
+  --pc-institucional-overlay-alpha: 0.55;
+  transition: --pc-institucional-overlay-alpha 0.15s ease;
+
+  --bs-border-radius: 12px;
+  --bs-font-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce){
+  :root{ transition: none; }
+}

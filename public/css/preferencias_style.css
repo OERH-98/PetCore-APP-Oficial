@@ -1,0 +1,50 @@
+/* --------------------------------------------------------------------------
+   Imagen institucional (Preferencias > Apariencia)
+   Configurada por el administrador en el frontend de escritorio (Config del
+   Sistema) y aplicada aquí como fondo de página, con un velo cuya opacidad
+   decide cada propietario -- ver aplicarFondoInstitucional() en utils.js.
+   Sin la clase (no hay imagen, o "mostrar imagen institucional" está
+   apagado) no se toca nada y queda el fondo normal de --pc-fondo.
+   -------------------------------------------------------------------------- */
+body.pc-fondo-institucional-activo{
+  background-image:
+    linear-gradient(
+      rgba(var(--pc-institucional-overlay-rgb), var(--pc-institucional-overlay-alpha)),
+      rgba(var(--pc-institucional-overlay-rgb), var(--pc-institucional-overlay-alpha))
+    ),
+    var(--pc-institucional-imagen);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* --------------------------------------------------------------------------
+   Página Preferencias
+   -------------------------------------------------------------------------- */
+.pc-segmentado{
+  display: flex; gap: .4rem;
+}
+.pc-segmentado-btn{
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: .35rem;
+  padding: .75rem .5rem;
+  border: 1px solid var(--pc-borde);
+  border-radius: 12px;
+  background: var(--pc-fondo);
+  color: var(--pc-texto-suave);
+  font-size: .78rem; font-weight: 600;
+}
+.pc-segmentado-btn i{ font-size: 1.1rem; }
+.pc-segmentado-btn:hover{ color: var(--pc-azul); }
+.pc-segmentado-btn[aria-pressed="true"]{
+  background: var(--pc-azul-claro);
+  border-color: var(--pc-azul);
+  color: var(--pc-azul);
+}
+
+.pc-preferencia-fila + .pc-preferencia-fila{
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--pc-borde);
+}

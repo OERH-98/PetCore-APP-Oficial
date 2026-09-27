@@ -1,0 +1,56 @@
+/* ==========================================================================
+   PetCore — Tema CLARO
+   Se carga como hoja de estilo intercambiable (nunca junto con
+   tema_oscuro.css) -- ver tema_temprano.js / tema_temprano_login.js, que
+   escriben el <link id="CSS_TEMA"> correcto antes del primer render, y
+   Preferencias > Apariencia, que lo intercambia en caliente al elegir tema.
+   ========================================================================== */
+:root{
+  color-scheme: light;
+
+  /* Azul corporativo tomado del logo (#2D60A1) */
+  --pc-azul:        #2D60A1;
+  --pc-azul-oscuro: #1C3D6B;
+  --pc-azul-claro:  #EAF1FA;
+  --pc-fondo:       #F4F6FA;
+  --pc-superficie:  #FFFFFF;
+  --pc-texto:       #1F2733;
+  --pc-texto-suave: #6B7789;
+  --pc-texto-fuerte: var(--pc-azul-oscuro);
+  --pc-borde:       #E2E8F1;
+
+  /* Semáforo de estados (mismos nombres que usa la base de datos) */
+  --pc-ok:      #2E9E6B;
+  --pc-aviso:   #D98218;
+  --pc-critico: #CE4B45;
+
+  /* Fondos de las etiquetas de estado (badge) */
+  --pc-badge-neutral-fondo: #EDEFF3;
+  --pc-badge-ok-fondo:      #E6F5EE;
+  --pc-badge-aviso-fondo:   #FCF1E1;
+  --pc-badge-critico-fondo: #FBEAE9;
+
+  /* Esqueleto de carga (mientras no llega el dato real de la API) */
+  --pc-skeleton-base:   #E2E5E9;
+  --pc-skeleton-brillo: #F2F4F6;
+
+  /* Resplandor detrás del logo en login.html / index.html */
+  --pc-acceso-glow: #FFFFFF;
+
+  /* Imagen institucional (Preferencias > Apariencia): el color del velo se
+     adapta al tema; la opacidad real la fija cada propietario y se aplica
+     en línea desde utils.js. */
+  --pc-institucional-overlay-rgb: 244, 246, 250;
+
+  /* Variables nativas de Bootstrap 5.3 */
+  --bs-primary:     var(--pc-azul);
+  --bs-primary-rgb: 45, 96, 161;
+  --bs-body-color:  var(--pc-texto);
+  --bs-body-bg:     var(--pc-fondo);
+  --bs-border-color:var(--pc-borde);
+  --bs-tertiary-bg: var(--pc-fondo);
+  --bs-link-color:  var(--pc-azul);
+  --bs-link-hover-color: var(--pc-texto-fuerte);
+  --bs-secondary-color: var(--pc-texto-suave);
+  --bs-secondary-bg: var(--pc-azul-claro);
+}

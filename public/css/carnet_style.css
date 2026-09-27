@@ -1,0 +1,33 @@
+/* --------------------------------------------------------------------------
+   Carnet de la mascota (elemento distintivo: imita la cartilla física)
+   -------------------------------------------------------------------------- */
+.pc-carnet{
+  position: relative;
+  background: linear-gradient(160deg, var(--pc-azul) 0%, var(--pc-azul-oscuro) 100%);
+  color:#fff;
+  border-radius: var(--pc-radio);
+  padding: 1.5rem 1.25rem 1.75rem;
+  overflow: hidden;
+  text-align: center;
+}
+.pc-carnet h1, .pc-carnet h2{ color:#fff; }
+.pc-carnet .pc-eyebrow{ color: rgba(255,255,255,.7); }
+.pc-carnet .pc-retrato{ background: rgba(255,255,255,.16); color:#fff; }
+/* Borde troquelado inferior, como el de una cartilla de vacunación */
+.pc-carnet::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:-9px; height:18px;
+  background-image: radial-gradient(circle at 9px 9px, var(--pc-fondo) 8px, transparent 9px);
+  background-size: 22px 18px;
+}
+.pc-carnet-datos{
+  display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: .85rem .5rem;
+  margin-top: 1.25rem; padding-top: 1.25rem;
+  border-top: 1px dashed rgba(255,255,255,.35);
+}
+.pc-carnet-datos dt{
+  font-size:.66rem; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color: rgba(255,255,255,.7);
+}
+.pc-carnet-datos dd{ margin:0; font-size:1rem; font-weight:700; }

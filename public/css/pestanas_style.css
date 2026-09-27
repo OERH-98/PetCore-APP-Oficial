@@ -1,0 +1,17 @@
+/* --------------------------------------------------------------------------
+   Pestañas del expediente
+   -------------------------------------------------------------------------- */
+.pc-tabs{
+  gap:.25rem;
+  border-bottom: 1px solid var(--pc-borde);
+  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+}
+.pc-tabs::-webkit-scrollbar{ display:none; }
+.pc-tabs .nav-link{
+  white-space: nowrap;
+  border: 0; border-bottom: 3px solid transparent; border-radius: 0;
+  color: var(--pc-texto-suave); font-weight: 600;
+  padding: .75rem 1rem;
+}
+.pc-tabs .nav-link:hover{ color: var(--pc-azul); }
+.pc-tabs .nav-link.active{ color: var(--pc-azul); background: transparent; border-bottom-color: var(--pc-azul); }

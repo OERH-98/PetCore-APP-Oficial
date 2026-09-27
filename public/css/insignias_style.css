@@ -1,0 +1,15 @@
+/* --------------------------------------------------------------------------
+   Etiquetas de estado (badge de Bootstrap recoloreado)
+   -------------------------------------------------------------------------- */
+.badge.pc-badge{
+  display:inline-flex; align-items:center; gap:.38rem;
+  font-size:.74rem; font-weight:700; line-height:1;
+  padding:.42rem .68rem; border-radius:999px;
+  background: var(--pc-badge-neutral-fondo); color: var(--pc-texto-suave);
+}
+.badge.pc-badge::before{
+  content:""; width:6px; height:6px; border-radius:50%; background: currentColor;
+}
+.badge.pc-badge-ok{      background: var(--pc-badge-ok-fondo); color: var(--pc-ok); }
+.badge.pc-badge-aviso{   background: var(--pc-badge-aviso-fondo); color: var(--pc-aviso); }
+.badge.pc-badge-critico{ background: var(--pc-badge-critico-fondo); color: var(--pc-critico); }

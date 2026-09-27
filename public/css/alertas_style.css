@@ -1,0 +1,94 @@
+/* --------------------------------------------------------------------------
+   SWEETALERT2 / TOAST -- mismos estilos que el frontend de escritorio
+   (style_global_compartido.css ahí), para que un Toast o una alerta de
+   confirmación se vean y se sientan igual en PC y en mobile, tanto en modo
+   claro como oscuro. El color de fondo/texto real del popup lo pone en
+   inglés js/utils/alertas_utils.js (confirmButtonColor, icon, etc.); aquí
+   solo va el detalle fino que esa función no cubre: el toast (que no
+   tiene override en JS) y el modo oscuro completo del popup.
+   -------------------------------------------------------------------------- */
+.swal2-popup {
+  border-radius: 30px !important;
+}
+
+:root[data-theme="dark"] .swal2-popup {
+  background: #1e2733 !important;
+  color: #e9ecef !important;
+}
+
+:root[data-theme="dark"] .swal2-title,
+:root[data-theme="dark"] .swal2-html-container,
+:root[data-theme="dark"] .swal2-content {
+  color: #e9ecef !important;
+}
+
+:root[data-theme="dark"] .swal2-close {
+  color: #e9ecef !important;
+}
+
+:root[data-theme="dark"] .swal2-popup .text-muted,
+:root[data-theme="dark"] .swal2-popup small {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .swal2-popup .text-dark,
+:root[data-theme="dark"] .swal2-popup .text-black {
+  color: #e9ecef !important;
+}
+
+:root[data-theme="dark"] .swal2-input,
+:root[data-theme="dark"] .swal2-textarea,
+:root[data-theme="dark"] .swal2-select {
+  background-color: rgb(49, 49, 49) !important;
+  color: white !important;
+  border: 1px solid rgb(80, 80, 80) !important;
+}
+
+.colored-toast {
+  border-radius: 15px;
+}
+
+:root[data-theme="dark"] .colored-toast {
+  background-color: #1e2733 !important;
+  color: #e9ecef !important;
+}
+
+/* La barra de progreso del toast (timerProgressBar) usa por defecto un gris
+   translúcido que casi no se distingue sobre el fondo oscuro del toast --
+   en blanco sólido se nota bien cuánto falta para que se cierre solo. */
+:root[data-theme="dark"] .colored-toast .swal2-timer-progress-bar {
+  background: #ffffff !important;
+}
+
+/* El ícono de "success" (✔) de SweetAlert2 tapa las puntas de su anillo
+   verde con dos rectángulos fijos en blanco, pensados para un popup
+   claro -- en oscuro quedan flotando sobre el fondo navy. Se igualan al
+   mismo fondo oscuro del popup/toast para que se disimulen igual. */
+:root[data-theme="dark"] .swal2-icon.swal2-success [class^="swal2-success-circular-line"],
+:root[data-theme="dark"] .swal2-icon.swal2-success .swal2-success-fix {
+  background-color: #1e2733 !important;
+}
+
+/* Inputs de SweetAlert2 en pantallas angostas ("Verifica tu contraseña
+   actual" / "Nueva contraseña" en perfil_controller.js): SweetAlert2 les
+   pone por defecto un margin izquierdo/derecho fijo (2em) para centrarlos
+   dentro de un popup ancho de escritorio, pero en varios de nuestros
+   modales ese input lleva además la clase Bootstrap "m-0" (para pegarlo a
+   su <label>), y "m-0" trae !important -- anula el margen de SweetAlert2
+   sin anular el ancho "auto" que ese margen sostenía, así que en un popup
+   angosto (celulares chicos, <360px) el input se sale del cuadro por la
+   derecha. Se le da un ancho explícito en vez de depender de ese cálculo. */
+.swal2-input,
+.swal2-textarea,
+.swal2-select {
+  width: 100% !important;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.swal2-html-container {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}

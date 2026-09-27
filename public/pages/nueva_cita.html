@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script src="../js/controllers/fetch_con_credenciales.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2D60A1">
+  <meta name="description" content="Agenda una cita para tu mascota en PetCore.">
+  <title>Agendar nueva cita | PetCore</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <!-- Tipografías -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Tema (claro/oscuro/sistema): DESPUÉS de Bootstrap para poder sobreponer
+       sus variables --bs-* y ANTES de style.css / que pinte nada. -->
+  <script src="../js/services/sesion_temprana_service.js"></script>
+  <script src="../js/controllers/tema_temprano.js"></script>
+  <!-- Estilos propios -->
+  <link href="../css/style.css" rel="stylesheet">
+  <!-- Animaciones (Preferencias > Accesibilidad puede desactivarlas) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body class="pc-con-header">
+
+  <!-- ================== HEADER SUPERIOR ================== -->
+  <header class="pc-header">
+    <div class="pc-header-inner">
+      <a class="pc-header-btn" href="citas.html" aria-label="Volver atrás">
+        <i class="fa fa-arrow-left"></i>
+      </a>
+      <h1 class="pc-header-titulo">Agendar Nueva Cita</h1>
+      <span aria-hidden="true"></span>
+    </div>
+  </header>
+
+  <!-- ================== CONTENIDO ================== -->
+  <main class="container pc-lienzo py-4">
+    <form class="pc-card p-3 p-sm-4 needs-validation animate__animated animate__fadeInUp animate__faster" id="pcFormCita" novalidate>
+
+      <div class="mb-3">
+        <label class="form-label" for="pcCitaMascota">Mascota</label>
+        <select class="form-select" id="pcCitaMascota" required></select>
+        <div class="invalid-feedback">Elige la mascota que será atendida.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="pcCitaServicioCategoria">Categoría</label>
+        <select class="form-select mb-2" id="pcCitaServicioCategoria"></select>
+
+        <label class="form-label" for="pcCitaServicio">Servicio</label>
+        <select class="form-select" id="pcCitaServicio" required></select>
+        <div class="invalid-feedback">Elige el servicio que necesitas.</div>
+        <p class="pc-meta mt-2 mb-0 d-none" id="pcCitaCosto"></p>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-7">
+          <label class="form-label" for="pcCitaFecha">Fecha</label>
+          <input type="date" class="form-control" id="pcCitaFecha" required>
+          <div class="invalid-feedback">Elige una fecha.</div>
+        </div>
+        <div class="col-5">
+          <label class="form-label" for="pcCitaHora">Hora</label>
+          <!-- step="1800" (30 min): coincide con TRG_CIT_VALIDAR_ESPACIADO
+               en la base de datos (ningún veterinario puede tener dos citas
+               a menos de 30 min de diferencia), así que cualquier horario
+               que ofrezca esta grilla ya es válido para esa regla. Los
+               horarios ya ocupados se deshabilitan dinámicamente -- ver
+               nueva_cita_controller.js (calcularHorasOcupadas). -->
+          <input type="time" class="form-control" id="pcCitaHora" step="1800" required>
+          <div class="invalid-feedback">Elige una hora.</div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label" for="pcCitaMotivo">Motivo de la consulta</label>
+        <textarea class="form-control" id="pcCitaMotivo" rows="4" maxlength="200"
+                  placeholder="Cuéntale al veterinario qué has notado en tu mascota" required></textarea>
+        <div class="invalid-feedback">Describe brevemente el motivo (máximo 200 caracteres).</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg w-100" id="pcBtnAgendar">Agendar cita</button>
+      <p class="pc-meta text-center mt-3 mb-0">
+        Recepción confirmará la cita por WhatsApp antes de la fecha elegida.
+      </p>
+    </form>
+  </main>
+
+
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script type="module" src="../js/controllers/nueva_cita_controller.js"></script>
+</body>
+</html>

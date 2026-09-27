@@ -1,0 +1,480 @@
+/* --------------------------------------------------------------------------
+   Base y tipografía
+   -------------------------------------------------------------------------- */
+/* overflow-x va en <html>, NO en <body>: por la regla de la spec de CSS que
+   convierte overflow-y a "auto" cuando overflow-x no es "visible" y
+   overflow-y sí lo es, ponerlo en body lo convertía sin querer en su
+   PROPIO contenedor de scroll vertical -- pero el scroll real de la
+   página lo maneja <html> (document.scrollingElement), no <body>. El
+   resultado: el contenido de más de una pantalla quedaba atrapado dentro
+   de un scroll interno de body al que el scroll normal (rueda del mouse,
+   swipe, barra) nunca llegaba, así que la página se sentía "cortada" antes
+   de tiempo y el último botón quedaba tapado por la barra inferior sin
+   forma de alcanzarlo. Puesto en <html> no pasa lo mismo porque <html> ya
+   es el elemento que hace scroll de por sí. */
+html{ -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+body{
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  background-color: var(--pc-fondo);
+  color: var(--pc-texto);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Transición suave al cambiar de tema (Preferencias > Apariencia) */
+body, .pc-card, .pc-header, .pc-bottomnav, .pc-carnet,
+.form-control, .form-select, .badge.pc-badge{
+  transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+@media (prefers-reduced-motion: reduce){
+  body, .pc-card, .pc-header, .pc-bottomnav, .pc-carnet,
+  .form-control, .form-select, .badge.pc-badge{ transition: none; }
+}
+
+/* Ninguna imagen debe desbordar su contenedor en pantallas angostas */
+img{ max-width: 100%; height: auto; }
+
+h1, h2, h3, h4, h5, h6{
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--pc-texto-fuerte);
+}
+
+.pc-eyebrow{
+  font-size: .7rem; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--pc-texto-suave);
+}
+.pc-dato{ font-variant-numeric: tabular-nums; }
+.pc-meta{ font-size: .85rem; color: var(--pc-texto-suave); }
+
+/* Foco visible en todo el portal (accesibilidad por teclado) */
+a:focus-visible, button:focus-visible, .btn:focus-visible,
+.form-control:focus-visible, .form-select:focus-visible, .nav-link:focus-visible{
+  outline: 3px solid rgba(45,96,161,.45);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.btn{ font-weight: 600; border-radius: 10px; padding-block: .68rem; }
+.btn-primary{
+  --bs-btn-bg: var(--pc-azul);
+  --bs-btn-border-color: var(--pc-azul);
+  --bs-btn-hover-bg: var(--pc-azul-oscuro);
+  --bs-btn-hover-border-color: var(--pc-azul-oscuro);
+  --bs-btn-active-bg: var(--pc-azul-oscuro);
+  --bs-btn-active-border-color: var(--pc-azul-oscuro);
+  --bs-btn-disabled-bg: var(--pc-azul);
+  --bs-btn-disabled-border-color: var(--pc-azul);
+}
+.btn-outline-primary{
+  --bs-btn-color: var(--pc-azul);
+  --bs-btn-border-color: var(--pc-azul);
+  --bs-btn-hover-bg: var(--pc-azul);
+  --bs-btn-hover-border-color: var(--pc-azul);
+  --bs-btn-active-bg: var(--pc-azul-oscuro);
+  --bs-btn-active-border-color: var(--pc-azul-oscuro);
+}
+.btn-outline-secondary{
+  --bs-btn-color: var(--pc-texto-suave);
+  --bs-btn-border-color: var(--pc-borde);
+  --bs-btn-hover-color: var(--pc-texto);
+  --bs-btn-hover-bg: var(--pc-azul-claro);
+  --bs-btn-hover-border-color: var(--pc-borde);
+  --bs-btn-active-color: var(--pc-texto);
+  --bs-btn-active-bg: var(--pc-azul-claro);
+  --bs-btn-active-border-color: var(--pc-borde);
+}
+
+/* Respetar la preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:.01ms !important;
+    transition-duration:.01ms !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ESQUELETO DE CARGA
+   Recuadros grisáceos con brillo animado que remplazan visualmente un dato
+   (nombre, número, línea de texto) mientras todavía no llega de la API. Se
+   marca en el HTML estático con class="skeleton" desde el primer render
+   (nunca se ve un "0" ni un parpadeo del contenido real apareciendo tarde)
+   y el controller de cada página quita esa clase apenas asigna el valor
+   real, revelando el contenido de golpe -- mismo patrón que ya usa el
+   frontend de escritorio.
+   -------------------------------------------------------------------------- */
+.skeleton{
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+}
+.skeleton *{ visibility: hidden; }
+
+/* El shimmer vive en un ::before encima, no en el background del propio
+   elemento -- .pc-card (y cualquier otra clase que traiga su propio
+   "background: X" en shorthand) pisaría el background-color/background-
+   image del esqueleto si se declararan directamente aquí, porque esas
+   otras hojas (tarjetas_style.css, etc.) se importan DESPUÉS de esta y
+   ganan el mismo empate de especificidad. Un ::before es un caja aparte:
+   siempre pinta encima, sin importar qué fondo tenga el elemento debajo. */
+.skeleton::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 6px;
+  background-color: var(--pc-skeleton-base);
+  background-image: linear-gradient(100deg, transparent 30%, var(--pc-skeleton-brillo) 50%, transparent 70%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-brillo 1.4s ease-in-out infinite;
+}
+.skeleton-texto{ display: inline-block; min-width: 6em; }
+.skeleton-linea{ display: block; height: .9em; width: 100%; border-radius: 4px; }
+.skeleton-circulo::before{ border-radius: 50%; }
+
+/* Variante para usar sobre fondos de color (el header y el carnet de la
+   mascota son azules, no de --pc-superficie): un shimmer blanco
+   translúcido en vez del gris neutro, que se perdería/desentonaría sobre
+   el azul de marca. */
+.skeleton-claro::before{
+  background-color: rgba(255,255,255,.18);
+  background-image: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.4) 50%, transparent 70%);
+}
+
+@keyframes skeleton-brillo{
+  0%   { background-position: 150% 0; }
+  100% { background-position: -50% 0; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .skeleton::before{ animation: none; }
+}
+
+/* --------------------------------------------------------------------------
+   SELECT PERSONALIZADO (crearSelectPersonalizado() en selector_personalizado.js)
+   El <button> visible copia las clases del <select> original (form-select,
+   etc.) para heredar tamaño/padding, y suma esta clase como gancho fijo.
+   Es un <button>, no un <input> -- así nunca puede levantar el teclado
+   virtual (ver el comentario grande en selector_personalizado.js) -- por
+   eso hace falta resetear aquí lo que un botón trae distinto a un campo de
+   texto: alineación centrada, fuente y color que no heredan solos, y el
+   recorte en una sola línea para que un nombre largo no rompa el layout.
+   Usa var(--pc-*), así que se ve bien en claro/oscuro solo con que el tema
+   activo redefina esas variables -- sin duplicar reglas por tema.
+   -------------------------------------------------------------------------- */
+.pc-select-oculto{ display: none !important; }
+
+.pc-select-input{
+  display: block;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: left;
+  font: inherit;
+  color: var(--pc-texto);
+  background-color: var(--pc-superficie);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236B7789' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right .85rem center;
+  background-size: 14px;
+}
+.pc-select-input--vacio{ color: var(--pc-texto-suave); }
+.pc-select-input:disabled{ cursor: not-allowed; opacity: .6; }
+
+.pc-select-lista{
+  position: fixed;
+  z-index: 2000;
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 4px;
+  border-radius: 10px;
+  border-color: var(--pc-borde);
+  background-color: var(--pc-superficie);
+  box-shadow: var(--pc-sombra);
+}
+.pc-select-lista .dropdown-item{
+  cursor: pointer;
+  border-radius: 8px;
+  padding: .5rem .75rem;
+  color: var(--pc-texto);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* var(--pc-azul-claro)/var(--pc-azul-oscuro) dan un hover casi invisible en
+   oscuro -- en ese tema son dos azules marino muy oscuros, casi iguales al
+   fondo de la propia lista (--pc-superficie). Se usa el mismo azul sólido
+   + blanco que ya usa .active (abajo), que sí tiene contraste real en los
+   dos temas: --pc-azul es #2D60A1 en claro y #5B9BFF en oscuro, siempre
+   bastante más claro/saturado que el fondo de la lista. */
+.pc-select-lista .dropdown-item:hover{
+  background-color: var(--pc-azul);
+  color: #ffffff;
+}
+.pc-select-lista .dropdown-item.active{
+  background-color: var(--pc-azul);
+  color: #ffffff;
+}
+.pc-select-lista .dropdown-item.disabled{
+  cursor: default;
+  color: var(--pc-texto-suave);
+  background-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   SLIDER PERSONALIZADO (crearSliderPersonalizado() en slider_personalizado.js)
+   Un gradiente de dos colores que corta en --pc-slider-relleno (el % ya
+   recorrido) da el efecto de pista "rellenándose". Mismo truco de
+   variables de tema que el select personalizado de arriba. Registrada
+   como <percentage> para que sea interpolable -- sin @property el
+   navegador no anima una custom property, así que el relleno saltaba de
+   golpe a cada punto del step="5" en vez de deslizarse hasta ahí.
+   -------------------------------------------------------------------------- */
+@property --pc-slider-relleno {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+.pc-slider{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  margin: 0;
+  border-radius: 999px;
+  background: linear-gradient(to right,
+    var(--pc-azul) 0%, var(--pc-azul) var(--pc-slider-relleno, 0%),
+    var(--pc-azul-claro) var(--pc-slider-relleno, 0%), var(--pc-azul-claro) 100%);
+  outline: none;
+  cursor: pointer;
+  transition: --pc-slider-relleno 0.09s linear;
+}
+@media (prefers-reduced-motion: reduce){
+  .pc-slider{ transition: none; }
+}
+.pc-slider::-webkit-slider-runnable-track{
+  height: 8px;
+  border-radius: 999px;
+  background: transparent;
+}
+.pc-slider::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--pc-superficie);
+  border: 3px solid var(--pc-azul);
+  box-shadow: var(--pc-sombra);
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+.pc-slider::-moz-range-track{
+  height: 8px;
+  border-radius: 999px;
+  background: var(--pc-azul-claro);
+  border: none;
+}
+.pc-slider::-moz-range-progress{
+  height: 8px;
+  border-radius: 999px;
+  background: var(--pc-azul);
+}
+.pc-slider::-moz-range-thumb{
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--pc-superficie);
+  border: 3px solid var(--pc-azul);
+  box-shadow: var(--pc-sombra);
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+.pc-slider:hover::-webkit-slider-thumb,
+.pc-slider:hover::-moz-range-thumb{ transform: scale(1.1); }
+.pc-slider:active::-webkit-slider-thumb,
+.pc-slider:active::-moz-range-thumb{ transform: scale(1.15); }
+.pc-slider:focus-visible{
+  outline: 3px solid rgba(45,96,161,.45);
+  outline-offset: 3px;
+}
+.pc-slider:disabled{ opacity: .5; cursor: not-allowed; }
+
+/* --------------------------------------------------------------------------
+   FECHA/HORA PERSONALIZADA (crearFechaPersonalizada()/crearHoraPersonalizada()
+   en js/utils/fecha_hora_personalizada.js) -- mismo motivo que el select
+   personalizado: el calendario/reloj nativo lo dibuja el sistema operativo,
+   sin forma de igualar el look claro/oscuro del resto del portal. Usa
+   var(--pc-*), así que se ve bien en los dos temas solo con que el tema
+   activo redefina esas variables -- sin duplicar reglas por tema.
+   -------------------------------------------------------------------------- */
+.pc-fecha-hora-oculta{ display: none !important; }
+
+.pc-fecha-hora-input{
+  display: block;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: left;
+  font: inherit;
+  color: var(--pc-texto);
+  background-color: var(--pc-superficie);
+  cursor: pointer;
+  background-repeat: no-repeat;
+  background-position: right .85rem center;
+  background-size: 16px;
+}
+.pc-fecha-hora-input--vacio{ color: var(--pc-texto-suave); }
+.pc-fecha-hora-input--fecha{
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3crect x='2' y='3' width='12' height='11' rx='1.5' fill='none' stroke='%236B7789' stroke-width='1.4'/%3e%3cpath d='M2 6.5h12M5 1.5v3M11 1.5v3' fill='none' stroke='%236B7789' stroke-width='1.4' stroke-linecap='round'/%3e%3c/svg%3e");
+}
+.pc-fecha-hora-input--hora{
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3ccircle cx='8' cy='8' r='6' fill='none' stroke='%236B7789' stroke-width='1.4'/%3e%3cpath d='M8 5v3l2.2 2.2' fill='none' stroke='%236B7789' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+}
+.pc-fecha-hora-input:disabled{ cursor: not-allowed; opacity: .6; }
+
+.pc-fecha-hora-popup{
+  position: fixed;
+  z-index: 2000;
+  display: none;
+  background-color: var(--pc-superficie);
+  border: 1px solid var(--pc-borde);
+  border-radius: 12px;
+  box-shadow: var(--pc-sombra);
+  padding: 12px;
+  overflow: hidden;
+}
+.pc-fecha-hora-popup.show{ display: block; }
+
+.pc-fecha-hora-cabecera{
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin-bottom: 8px;
+}
+.pc-fecha-hora-cabecera--hora{ justify-content: center; }
+.pc-fecha-hora-titulo{
+  font-weight: 700; font-size: .92rem;
+  color: var(--pc-texto-fuerte); text-transform: capitalize; white-space: nowrap;
+  display: inline-flex; gap: 4px;
+}
+/* Mes y año del título son botones -- tocar el mes sube a la grilla de
+   meses del año actual, tocar el año sube a la de años, sin tener que
+   tocar "siguiente" un montón de veces para llegar lejos. */
+.pc-fecha-hora-titulo-parte{
+  border: none; background: transparent; padding: 2px 6px; border-radius: 6px;
+  font: inherit; font-weight: inherit; color: inherit; text-transform: inherit;
+  cursor: pointer;
+}
+.pc-fecha-hora-titulo-parte:hover{ background-color: var(--pc-azul-claro); }
+.pc-fecha-hora-nav{
+  border: none; background: transparent;
+  width: 30px; height: 30px; border-radius: 8px;
+  font-size: 1.2rem; line-height: 1;
+  color: var(--pc-azul); cursor: pointer;
+}
+.pc-fecha-hora-nav:hover{ background-color: var(--pc-azul-claro); }
+
+.pc-fecha-hora-semana{
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px;
+}
+.pc-fecha-hora-semana span{
+  display: block; text-align: center; font-size: .68rem; font-weight: 700;
+  color: var(--pc-texto-suave); text-transform: uppercase; letter-spacing: .02em;
+}
+
+.pc-fecha-hora-grilla{ display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.pc-fecha-hora-dia{
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 8px; background: transparent;
+  font-size: .88rem; color: var(--pc-texto); cursor: pointer;
+}
+.pc-fecha-hora-dia:hover{ background-color: var(--pc-azul-claro); color: var(--pc-azul-oscuro); }
+.pc-fecha-hora-dia--hoy{ box-shadow: inset 0 0 0 2px var(--pc-azul); }
+.pc-fecha-hora-dia--activo, .pc-fecha-hora-dia--activo:hover{
+  background-color: var(--pc-azul); color: #ffffff;
+}
+.pc-fecha-hora-dia--ajena{
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; font-size: .88rem; color: var(--pc-texto-suave); opacity: .5;
+}
+.pc-fecha-hora-dia--deshabilitado{ color: var(--pc-texto-suave); opacity: .5; cursor: not-allowed; }
+.pc-fecha-hora-dia--deshabilitado:hover{ background: transparent; color: var(--pc-texto-suave); }
+
+/* Día feriado -- va SIEMPRE junto con --deshabilitado, pero con su propio
+   color (mismo semáforo "crítico" que ya usan los badges de estado) para
+   que se note que la razón es "es feriado" y no solo "fuera de rango" (ej.
+   una fecha pasada). Debe ir después de --deshabilitado para ganarle la
+   cascada (misma especificidad), y sin opacity reducida para que el color
+   no se vea lavado. */
+.pc-fecha-hora-dia--feriado, .pc-fecha-hora-dia--feriado:hover{
+  background-color: var(--pc-badge-critico-fondo); color: var(--pc-critico); opacity: 1;
+}
+
+.pc-fecha-hora-grilla-meses{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.pc-fecha-hora-mes{
+  padding: .6rem 0; border: none; border-radius: 8px; background: transparent;
+  font-size: .85rem; color: var(--pc-texto); cursor: pointer;
+}
+.pc-fecha-hora-mes:hover{ background-color: var(--pc-azul-claro); color: var(--pc-azul-oscuro); }
+.pc-fecha-hora-mes--activo, .pc-fecha-hora-mes--activo:hover{
+  background-color: var(--pc-azul); color: #ffffff;
+}
+
+.pc-fecha-hora-grilla-anios{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.pc-fecha-hora-anio{
+  padding: .6rem 0; border: none; border-radius: 8px; background: transparent;
+  font-size: .85rem; font-variant-numeric: tabular-nums; color: var(--pc-texto); cursor: pointer;
+}
+.pc-fecha-hora-anio:hover{ background-color: var(--pc-azul-claro); color: var(--pc-azul-oscuro); }
+.pc-fecha-hora-anio--activo, .pc-fecha-hora-anio--activo:hover{
+  background-color: var(--pc-azul); color: #ffffff;
+}
+
+.pc-fecha-hora-pie{
+  display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+  margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--pc-borde);
+}
+.pc-fecha-hora-btn-pie{
+  border: none; background: transparent; padding: .4rem .7rem; border-radius: 8px;
+  font-size: .82rem; font-weight: 700; color: var(--pc-azul); cursor: pointer;
+}
+.pc-fecha-hora-btn-pie:hover{ background-color: var(--pc-azul-claro); }
+.pc-fecha-hora-btn-pie--principal{ background-color: var(--pc-azul); color: #ffffff; }
+.pc-fecha-hora-btn-pie--principal:hover{ background-color: var(--pc-azul-oscuro); }
+
+.pc-fecha-hora-columnas{ display: flex; align-items: stretch; gap: 4px; max-height: 220px; }
+.pc-fecha-hora-columna{
+  flex: 1; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--pc-borde) transparent;
+}
+/* Chrome/Safari no soportan scrollbar-color -- barra angosta a mano. */
+.pc-fecha-hora-columna::-webkit-scrollbar{ width: 6px; }
+.pc-fecha-hora-columna::-webkit-scrollbar-track{ background: transparent; }
+.pc-fecha-hora-columna::-webkit-scrollbar-thumb{
+  background-color: var(--pc-borde); border-radius: 999px;
+}
+.pc-fecha-hora-columna::-webkit-scrollbar-thumb:hover{ background-color: var(--pc-azul); }
+.pc-fecha-hora-separador{ align-self: center; font-weight: 700; color: var(--pc-azul); }
+.pc-fecha-hora-item{
+  border: none; background: transparent; padding: .45rem 0; border-radius: 8px;
+  font-size: .9rem; font-variant-numeric: tabular-nums; text-align: center;
+  color: var(--pc-texto); cursor: pointer;
+}
+.pc-fecha-hora-item:hover{ background-color: var(--pc-azul-claro); color: var(--pc-azul-oscuro); }
+.pc-fecha-hora-item--activo, .pc-fecha-hora-item--activo:hover{
+  background-color: var(--pc-azul); color: #ffffff;
+}
+.pc-fecha-hora-item--deshabilitado, .pc-fecha-hora-item--deshabilitado:hover{
+  background-color: transparent; color: var(--pc-texto-suave);
+  opacity: .4; cursor: not-allowed; text-decoration: line-through;
+}

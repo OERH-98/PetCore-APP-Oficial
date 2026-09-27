@@ -1,0 +1,24 @@
+/* ==========================================================================
+   PetCore — Portal de Propietarios (app móvil híbrida, MPA)
+   css/style.css — se carga DESPUES de Bootstrap 5 para sobrescribirlo.
+   Equipo PTC C205-26 PETCORE
+
+   Este archivo estaba dividido en un solo bloque; ahora solo importa
+   los estilos separados por sección/componente para que sea más fácil
+   de mantener. El orden de importación es el mismo que tenía el CSS
+   original, así que el resultado visual es idéntico.
+   ========================================================================== */
+
+@import url("variables_style.css");
+@import url("base_style.css");
+@import url("encabezado_style.css");
+@import url("navegacion_style.css");
+@import url("tarjetas_style.css");
+@import url("insignias_style.css");
+@import url("carnet_style.css");
+@import url("pestanas_style.css");
+@import url("registros_style.css");
+@import url("acceso_style.css");
+@import url("facturas_style.css");
+@import url("preferencias_style.css");
+@import url("alertas_style.css");

@@ -1,0 +1,53 @@
+/* --------------------------------------------------------------------------
+   Filas de registro (citas, vacunas, consultas, facturas)
+   -------------------------------------------------------------------------- */
+.pc-registro{
+  display:flex; gap:1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--pc-borde);
+}
+.pc-registro:last-child{ border-bottom:0; padding-bottom:0; }
+.pc-registro-fecha{
+  flex: 0 0 56px; text-align:center;
+  border-radius: 10px;
+  background: var(--pc-azul-claro); color: var(--pc-texto-fuerte);
+  padding: .45rem .25rem; height: fit-content;
+}
+.pc-registro-fecha .dia{ display:block; font-size:1.2rem; font-weight:800; line-height:1; }
+.pc-registro-fecha .mes{
+  display:block; font-size:.63rem; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; margin-top:.15rem;
+}
+.pc-registro-titulo{ font-weight:700; color: var(--pc-texto-fuerte); }
+
+/* BUG QUE ESTO CORRIGE: el bloque de texto (icono aparte, a la izquierda)
+   es un hijo flex con flex-grow, pero por defecto un hijo flex no encoge
+   más allá del ancho de SU contenido ("min-width: auto") -- un correo o
+   una dirección larga, sin espacios donde cortar, empujaba el ancho de
+   toda la fila (y de la página) en vez de quedarse dentro de la tarjeta.
+   min-width:0 permite que sí encoja, y overflow-wrap hace que la palabra
+   larga salte de línea en vez de seguir desbordando. Se aplica a
+   cualquier hijo directo de .pc-registro que no sea .pc-registro-fecha
+   (perfil.html, mascota_detalle.html, notificaciones.html, etc. usan
+   estructuras de wrapper ligeramente distintas para ese bloque). */
+.pc-registro > *:not(.pc-registro-fecha){
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/* Separador de día en la agenda */
+.pc-separador-dia{
+  display:flex; align-items:center; gap:.75rem;
+  margin: 1.5rem 0 .75rem;
+}
+.pc-separador-dia::after{
+  content:""; flex:1 1 auto; height:1px; background: var(--pc-borde);
+}
+.pc-separador-dia span{
+  font-size:.72rem; font-weight:700; letter-spacing:.12em;
+  text-transform: uppercase; color: var(--pc-texto-suave);
+}
+
+/* Estado vacío */
+.pc-vacio{ text-align:center; padding: 2.5rem 1rem; color: var(--pc-texto-suave); }
+.pc-vacio i{ font-size:1.75rem; color: var(--pc-borde); display:block; margin-bottom:.6rem; }

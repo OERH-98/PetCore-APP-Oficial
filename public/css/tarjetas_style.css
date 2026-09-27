@@ -1,0 +1,93 @@
+/* --------------------------------------------------------------------------
+   Tarjetas
+   -------------------------------------------------------------------------- */
+.pc-card{
+  background: var(--pc-superficie);
+  border: 1px solid var(--pc-borde);
+  border-radius: var(--pc-radio);
+  box-shadow: var(--pc-sombra);
+}
+a.pc-card{ text-decoration:none; color: inherit; display:block; }
+
+/* Notificaciones (notificaciones.html): tarjeta como <button>, no <a> --
+   ya no navega directo a la sección, abre el detalle en un modal -- mismo
+   reset de estilos nativos que ya hacía "a.pc-card" para los enlaces. */
+button.pc-card{ color: inherit; font: inherit; cursor: pointer; }
+.pc-card-pulsable{ transition: transform .16s ease, box-shadow .16s ease; }
+.pc-card-pulsable:hover{ transform: translateY(-2px); box-shadow: 0 10px 26px rgba(28,61,107,.14); }
+.pc-card-pulsable:active{ transform: scale(.99); }
+
+/* Retrato de la mascota: marcador mientras no exista MAS_FOTO */
+.pc-retrato{
+  width: 72px; height: 72px; flex: 0 0 72px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--pc-azul-claro);
+  color: var(--pc-azul);
+  font-size: 1.8rem;
+  overflow: hidden;
+}
+.pc-retrato img{ width:100%; height:100%; object-fit: cover; }
+.pc-retrato-sm{ width:56px; height:56px; flex-basis:56px; font-size:1.4rem; }
+.pc-retrato-xl{ width:124px; height:124px; flex-basis:124px; font-size:3.2rem; }
+
+/* Ícono circular de cada tarjeta de Notificaciones -- mismo patrón que
+   .pc-retrato (círculo con fondo de color + contenido centrado) pero con
+   un ícono de Font Awesome en vez de una foto, y coloreado según qué tan
+   urgente es el aviso (mismos tokens semánticos que ya usan los badges
+   .pc-badge-ok/aviso/critico). */
+.pc-noti-icono{
+  width: 44px; height: 44px; flex: 0 0 44px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 1.1rem;
+}
+.pc-noti-info{     background: var(--pc-azul-claro);        color: var(--pc-azul); }
+.pc-noti-ok{       background: var(--pc-badge-ok-fondo);      color: var(--pc-ok); }
+.pc-noti-aviso{    background: var(--pc-badge-aviso-fondo);   color: var(--pc-aviso); }
+.pc-noti-critico{  background: var(--pc-badge-critico-fondo); color: var(--pc-critico); }
+
+/* Punto de "nuevo" -- se agrega junto al título de las notificaciones que
+   todavía no se le habían mostrado a este propietario (ver esNueva en
+   notificaciones_utils.js). */
+.pc-noti-punto-nuevo{
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--pc-azul);
+  display: inline-block;
+  flex: 0 0 8px;
+}
+
+/* Botón de cámara superpuesto (editar_perfil.html) para cambiar la foto */
+.pc-foto-btn-cambiar{
+  position: absolute;
+  right: -2px; bottom: -2px;
+  width: 34px; height: 34px;
+  border: 2px solid var(--pc-superficie);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--pc-azul); color: #fff;
+  font-size: .85rem;
+  box-shadow: var(--pc-sombra);
+}
+.pc-foto-btn-cambiar:hover, .pc-foto-btn-cambiar:focus-visible{ background: var(--pc-azul-oscuro); color: #fff; }
+
+/* --------------------------------------------------------------------------
+   Carrusel horizontal del inicio
+   -------------------------------------------------------------------------- */
+.pc-carrusel{
+  display: flex; gap: .75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: .25rem .25rem 1rem;
+  margin-inline: -.25rem;
+  scrollbar-width: none;
+}
+.pc-carrusel::-webkit-scrollbar{ display:none; }
+.pc-carrusel-item{
+  scroll-snap-align: start;
+  flex: 0 0 132px;
+  text-align: center;
+  padding: 1rem .75rem;
+  text-decoration: none;
+}
+.pc-carrusel-item .pc-retrato{ margin-inline: auto; }

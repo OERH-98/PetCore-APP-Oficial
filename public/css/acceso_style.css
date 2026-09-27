@@ -1,0 +1,115 @@
+/* --------------------------------------------------------------------------
+   Pantallas de acceso (index y login)
+   -------------------------------------------------------------------------- */
+.pc-acceso{
+  min-height: 100dvh;
+  display:flex; align-items:center; justify-content:center;
+  padding: 2rem 1rem;
+  background: radial-gradient(1200px 600px at 50% -10%, var(--pc-acceso-glow) 0%, var(--pc-fondo) 60%);
+}
+.pc-acceso-caja{ width:100%; max-width: 400px; }
+.pc-logo-acceso{ width:100%; max-width: 190px; height:auto; }
+/* Logo más grande y libre del ancho de la tarjeta, solo en la pantalla de inicio (index.html) */
+.pc-acceso-inicio{ padding-inline: .5rem; }
+.pc-inicio-envoltorio{ width:100%; max-width: 600px; margin-inline:auto; }
+.pc-logo-inicio-wrap{ width:100%; max-width: 260px; margin-inline:auto; margin-bottom: 1.75rem; }
+.pc-logo-inicio{ display:block; width:100%; height:auto; }
+.pc-caja-inicio{ max-width: 440px; margin-inline:auto; }
+
+/* Logo: el azulito normal en modo claro, el blanco en oscuro (el azulito
+   trae detalles oscuros pensados para fondo claro y se pierden en oscuro).
+   data-theme ya lo deja listo tema_temprano_login.js antes del primer
+   render, así que no hace falta JS aparte para este swap. */
+.pc-logo-oscura{ display: none; }
+:root[data-theme="dark"] .pc-logo-clara{ display: none; }
+:root[data-theme="dark"] .pc-logo-oscura{
+  /* inline-block, no block: en login.html el logo se centra con
+     text-align:center del contenedor (.text-center), que solo centra
+     contenido inline/inline-block -- con display:block el logo se
+     desalineaba a la izquierda al cambiar a oscuro. En index.html no
+     afecta: ahí lo centra el wrapper con margin-inline:auto. */
+  display: inline-block;
+}
+
+/* Pantalla de carga (index.html) */
+.pc-logo-carga{ animation: pc-logo-pulso 1.6s ease-in-out infinite; }
+@keyframes pc-logo-pulso{
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.04); opacity: .85; }
+}
+.pc-barra-carga{
+  width: 100%; max-width: 220px; height: 6px; margin-inline: auto;
+  background: var(--pc-azul-claro); border-radius: 999px; overflow: hidden;
+}
+.pc-barra-carga-relleno{
+  height: 100%; width: 35%; border-radius: 999px;
+  background: var(--pc-azul);
+  animation: pc-barra-avance 1.1s ease-in-out infinite;
+}
+@keyframes pc-barra-avance{
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(340%); }
+}
+@media (prefers-reduced-motion: reduce){
+  .pc-logo-carga, .pc-barra-carga-relleno{ animation: none; }
+}
+
+/* Toggle de tema (claro/oscuro/sistema) de las pantallas fuera de la app
+   (login.html) -- no depende de sesión, así que vive aparte del que usa
+   Preferencias > Apariencia dentro del portal. */
+.pc-tema-toggle{
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top, 0px));
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  z-index: 20;
+  display: inline-flex;
+  gap: .15rem;
+  padding: .25rem;
+  background: var(--pc-superficie);
+  border: 1px solid var(--pc-borde);
+  border-radius: 999px;
+  box-shadow: var(--pc-sombra);
+}
+.pc-tema-toggle-btn{
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 50%;
+  background: transparent;
+  color: var(--pc-texto-suave);
+  font-size: .85rem;
+  line-height: 1;
+}
+.pc-tema-toggle-btn:hover{ color: var(--pc-azul); }
+.pc-tema-toggle-btn[aria-pressed="true"]{
+  background: var(--pc-azul-claro);
+  color: var(--pc-azul);
+}
+
+/* El botón de Google vive en un <iframe> de accounts.google.com -- fuera
+   de nuestro alcance por completo (cross-origin, ni una línea de CSS
+   propio le llega adentro). "theme: filled_black" en renderButton() sí
+   oscurece el botón genérico "Continuar con Google", pero la variante
+   PERSONALIZADA que Google dibuja sola (la fila "Continuar como <nombre>",
+   cuando detecta una sesión de Google activa en el navegador) ignora ese
+   theme y siempre sale blanca -- es una limitación del widget de Google,
+   no de esta hoja. No se puede pintar de oscuro, pero sí se le puede dar
+   un marco a juego con el resto de tarjetas oscuras de la página (mismos
+   tokens que .pc-card) para que se vea como una tarjeta puesta a
+   propósito, en vez de un rectángulo blanco suelto contra el fondo negro.
+   Con el botón genérico (ya oscuro gracias a filled_black) este marco
+   prácticamente no se nota: es oscuro sobre oscuro, no un contraste nuevo. */
+:root[data-theme="dark"] #pcGoogleBtnContenedor{
+  background: var(--pc-superficie);
+  border: 1px solid var(--pc-borde);
+  border-radius: 999px;
+  padding: 4px;
+  box-shadow: var(--pc-sombra);
+}
+
+/* Formularios */
+.form-label{ font-weight:600; font-size:.9rem; }
+.form-control, .form-select{ border-radius:10px; padding-block:.6rem; }
+.form-control:focus, .form-select:focus{
+  border-color: var(--pc-azul);
+  box-shadow: 0 0 0 .2rem rgba(45,96,161,.15);
+}

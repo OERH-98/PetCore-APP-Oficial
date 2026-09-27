@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2D60A1">
+  <meta name="description"
+    content="Portal de propietarios de PetCore: citas, vacunas, historial clínico y facturas de tus mascotas.">
+  <title>PetCore | Cargando</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <!-- Tipografías -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Tema (claro/oscuro/sistema): hereda la preferencia del login;
+       DESPUÉS de Bootstrap para poder pisar sus variables --bs-* y ANTES
+       de style.css / que pinte nada. -->
+  <script src="/js/services/sesion_temprana_service.js"></script>
+  <script src="/js/controllers/tema_temprano_login.js"></script>
+  <!-- Estilos propios -->
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+
+<body class="overflow-hidden">
+
+  <main class="pc-acceso pc-acceso-inicio">
+    <div class="pc-inicio-envoltorio text-center">
+      <div class="pc-logo-inicio-wrap pc-logo-carga">
+        <img src="/img/logo.svg" alt="PetCore" class="pc-logo-inicio pc-logo-clara">
+        <img src="/img/logo_blanco.svg" alt="PetCore" class="pc-logo-inicio pc-logo-oscura">
+      </div>
+
+      <div class="pc-barra-carga" aria-hidden="true">
+        <div class="pc-barra-carga-relleno"></div>
+      </div>
+
+      <p class="small text-secondary mt-3 mb-0">Preparando tu portal...</p>
+    </div>
+  </main>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="/js/controllers/index_controller.js"></script>
+</body>
+
+</html>
