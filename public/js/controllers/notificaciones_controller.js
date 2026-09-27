@@ -26,17 +26,14 @@ import {
   vacio, error as vacioError, quitarEsqueleto, escaparHtml, alertar
 } from "./utils.js";
 import { obtenerNoLeidasPorPropietario, obtenerLeidasPorPropietario, marcarComoLeida } from "../services/notificaciones_service.js";
+import { DESTINO_POR_ENLACE } from "../utils/notificaciones_enlaces_utils.js";
 
 // Mapea el código guardado en NOT_ENLACE (ver *Service.java en el backend,
 // ej. CitasService/DiagnosticoExpedienteService/HospitalizacionService) a
 // dónde debería aterrizar el propietario dentro del portal móvil. La
 // notificación no trae el id de la mascota/cita puntual, así que el
-// destino es la página de esa categoría, no el detalle exacto.
-const DESTINO_POR_ENLACE = {
-  CITAS: { href: "citas.html", icono: "fa-solid fa-calendar-check" },
-  EXPEDIENTE: { href: "mascotas.html", icono: "fa-solid fa-notes-medical" },
-  HOSPITALIZACION: { href: "mascotas.html", icono: "fa-solid fa-heart-pulse" }
-};
+// destino es la página de esa categoría, no el detalle exacto. Compartido
+// con push_fcm_utils.js (push nativo) -- ver notificaciones_enlaces_utils.js.
 
 const CLASE_POR_PRIORIDAD = {
   Urgente: "pc-noti-critico",

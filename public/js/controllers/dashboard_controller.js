@@ -12,6 +12,7 @@ import {
   retrato, soloFecha, nombreEmpleado, error as vacioError, quitarEsqueleto,
   escaparHtml
 } from "./utils.js";
+import { activarPushNativo, iniciarAperturaDeNotificacionesPush } from "../utils/push_fcm_utils.js";
 
 function mascotaPorId(mascotas, id) {
   return mascotas.find(function (m) { return Number(m.mas_id) === Number(id); }) || mascotas[0];
@@ -130,6 +131,15 @@ async function iniciarDashboard() {
 document.addEventListener("DOMContentLoaded", function () {
   iniciarLayout();
   iniciarDashboard();
+
+  // dashboard.html es la primera pantalla AUTENTICADA a la que se llega,
+  // tanto justo después de iniciar sesión como al reabrir la app con una
+  // sesión ya guardada -- por eso "se autoactive por cada login" queda
+  // cubierto acá, sin pedirle nada al usuario (registrar el token necesita
+  // sesión, que index.html/login.html todavía no tienen). No-op fuera de la
+  // app nativa.
+  activarPushNativo();
+  iniciarAperturaDeNotificacionesPush();
 
   // Tiempo real: si una cita propia se crea/edita/cambia de estado en
   // cualquier otro lugar (recepción, el propio veterinario), el resumen y

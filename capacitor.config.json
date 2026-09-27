@@ -2,6 +2,9 @@
   "appId": "com.petcore.app.oficial",
   "appName": "PetCore",
   "webDir": "dist",
+  "server": {
+    "iosScheme": "https"
+  },
   "plugins": {
     "SocialLogin": {
       "providers": {

@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Firebase -- no es secreto crítico (viaja embebido en el APK igual), pero
+# mejor no dejarlo en el repo por las dudas. Hace falta copiarlo a mano en
+# cualquier otra máquina donde se compile Android (android/app/google-services.json).
+android/app/google-services.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
