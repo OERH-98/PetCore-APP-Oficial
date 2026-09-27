@@ -112,6 +112,34 @@ body:has(.pc-tema-toggle) .pc-acceso{
   box-shadow: var(--pc-sombra);
 }
 
+/* Botón propio "Continuar con Google" (solo en la app nativa; en navegador
+   sigue el botón del iframe de Google). Usa los tokens del tema, así que
+   cambia solo entre claro y oscuro sin JS. El marco que el modo oscuro le
+   pone al contenedor del iframe aquí sobra. */
+:root #pcGoogleBtnContenedor.pc-google-nativo,
+:root[data-theme="dark"] #pcGoogleBtnContenedor.pc-google-nativo{
+  display: block !important;
+  background: none; border: 0; padding: 0; box-shadow: none; border-radius: 0;
+}
+.pc-btn-google{
+  width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: .65rem;
+  padding: .7rem 1rem;
+  font-size: 1rem; font-weight: 600; line-height: 1.5;
+  color: var(--pc-texto);
+  background: var(--pc-superficie);
+  border: 1px solid var(--pc-borde);
+  border-radius: .5rem;
+  box-shadow: var(--pc-sombra, 0 1px 2px rgba(0,0,0,.06));
+  transition: background-color .15s, border-color .15s, box-shadow .15s, transform .05s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pc-btn-google:hover{ border-color: var(--pc-azul); }
+.pc-btn-google:active{ transform: scale(.985); background: var(--pc-azul-claro); }
+.pc-btn-google:focus-visible{ outline: 2px solid var(--pc-azul); outline-offset: 2px; }
+.pc-btn-google:disabled{ opacity: .6; pointer-events: none; }
+.pc-btn-google-logo{ width: 20px; height: 20px; flex: none; }
+
 /* Formularios */
 .form-label{ font-weight:600; font-size:.9rem; }
 .form-control, .form-select{ border-radius:10px; padding-block:.6rem; }
