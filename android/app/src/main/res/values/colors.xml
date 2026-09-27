@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- styles.xml (AppTheme) referenciaba @color/colorPrimary/colorPrimaryDark/
+         colorAccent sin que este archivo existiera - Android caía a algún
+         valor por defecto (probablemente blanco) para el color ESTÁTICO de la
+         barra de estado, el que el sistema pinta antes de que cualquier JS
+         nuestro (StatusBar.setBackgroundColor) llegue a correr. En Android
+         moderno no se nota porque el plugin lo sobreescribe rápido; en
+         WebViews viejos (comprobado en un Samsung J7 Prime, Android 8) esa
+         primera pintura estática es la que se queda pegada.
+
+         colorPrimaryDark es el que Theme.AppCompat usa como
+         android:statusBarColor de forma automática (API 21+) - se deja en
+         el mismo azul institucional que -pc-azul (tema claro), así que
+         incluso si el JS no llega a tiempo, la barra de estado ya nace con
+         el color correcto en vez de blanco. -->
+    <color name="colorPrimary">#2D60A1</color>
+    <color name="colorPrimaryDark">#2D60A1</color>
+    <color name="colorAccent">#2D60A1</color>
+</resources>

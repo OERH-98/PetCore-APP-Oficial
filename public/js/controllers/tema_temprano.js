@@ -46,6 +46,36 @@
   document.write('<link rel="stylesheet" id="CSS_TEMA" href="' + rutaTema + '">');
   document.documentElement.setAttribute("data-theme", esOscuro ? "dark" : "light");
 
+  // A diferencia de login/index (ver tema_temprano_login.js), estas páginas
+  // SIEMPRE tienen el header azul fijo arriba (.pc-header, var(--pc-azul) --
+  // ambos tonos de azul, claro y oscuro, son lo bastante oscuros/saturados
+  // para íconos claros) -- así que acá la barra de estado NO sigue el tema,
+  // se queda fija con íconos claros sin importar claro/oscuro/sistema.
+  try {
+    // Android viejo (comprobado en un Samsung J7 Prime, Android 8): las
+    // llamadas al plugin StatusBar (setOverlaysWebView/setBackgroundColor)
+    // ahí NO arreglan nada -- rompen el color correcto que ya deja puesto el
+    // tema nativo estático (ver android:statusBarColor/windowLightStatusBar
+    // en styles.xml, AppTheme/AppTheme.NoActionBarLaunch, fijo en el mismo
+    // azul institucional). Así que en Android viejo no se toca nada por JS
+    // acá; solo en versiones modernas, donde SÍ hace falta (edge-to-edge
+    // real, notch, etc.).
+    var version = Number((navigator.userAgent.match(/Android\s+(\d+)/) || [])[1]);
+    var esAndroidViejo = version && version < 12;
+
+    if (!esAndroidViejo && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+      var StatusBar = (window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar)
+        || (window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("StatusBar"));
+      if (StatusBar) {
+        // overlaysWebView arranca en false (capacitor.config.json) para que
+        // Android viejo nunca lo toque -- acá, en dispositivos modernos, se
+        // activa el edge-to-edge real (necesario para notch/isla dinámica).
+        StatusBar.setOverlaysWebView({ overlay: true });
+        StatusBar.setStyle({ style: "DARK" });
+      }
+    }
+  } catch (e) { /* no-op fuera de la app nativa */ }
+
   // Tema "sistema": si el usuario cambia el modo claro/oscuro del teléfono con
   // la app abierta, se re-aplica al instante (antes solo se leía al cargar).
   // Con "claro"/"oscuro" fijados no se toca nada.

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -7,6 +7,23 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <!-- Explícito además del colorPrimaryDark de arriba (que AppCompat
+             mapea solo mientras el tema activo herede de Theme.AppCompat) -
+             android:statusBarColor es el atributo de framework puro, API 21+. -->
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <!-- Íconos claros (batería/señal/hora) para que se lean sobre el
+             fondo azul oscuro de arriba - false = "no uses íconos oscuros".
+             Mismo criterio fijo que tema_temprano.js: el header azul es lo
+             bastante oscuro/saturado para íconos claros en cualquier tema. -->
+        <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
+        <!-- Deja que el WebView se dibuje también en el área del notch/isla
+             dinámica (pantallas "infinity display") en vez de que Android le
+             recorte esa franja al contenido  sin esto, en esas pantallas el
+             header quedaba tapado por el recorte en vez de extenderse por
+             detrás de él. Los API level viejos (antes de 27) simplemente
+             ignoran este item, así que es seguro dejarlo acá aunque minSdk
+             sea 24. -->
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="27">shortEdges</item>
     </style>
 
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
@@ -16,7 +33,20 @@
     </style>
 
 
+    <!-- MainActivity usa ESTE tema (ver AndroidManifest.xml), no "AppTheme" -
+         "Theme.SplashScreen" es una rama de temas totalmente aparte de
+         Theme.AppCompat, así que no hereda nada de AppTheme (ni su
+         colorPrimaryDark). En dispositivos donde la actividad se queda con
+         este tema puesto más allá del splash inicial (comprobado en un
+         Samsung J7 Prime, Android 8 - MainActivity.java no cambia de tema
+         después del arranque), la barra de estado se quedaba con el color
+         por defecto de Theme.SplashScreen (blanco) en vez del azul de la
+         marca. android:statusBarColor es el atributo de framework puro (no
+         de AppCompat), así que funciona igual sin importar de qué temas
+         venga heredando este. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
     </style>
 </resources>

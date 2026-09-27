@@ -442,5 +442,40 @@ export async function generarPdfDesdeElemento(elementoOSelector, opciones = {}) 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'pt', 'a4');
     dibujarBloques(pdf, bloques, { titulo, logo });
+
+    // pdf.save() descarga con un <a download> sintético -- funciona en
+    // cualquier navegador real, pero los WebView nativos (Android/iOS,
+    // Capacitor) lo ignoran en silencio: el PDF se genera pero nunca hay
+    // diálogo de guardado ni archivo en ningún lado. Ahí hay que escribirlo
+    // a disco con el plugin Filesystem y abrir la hoja de compartir nativa
+    // (el usuario elige "Guardar en Archivos", enviarlo, etc.) -- no existe
+    // un "Downloads" universal al que escribir directo sin eso.
+    if (window.Capacitor?.isNativePlatform?.()) {
+        await guardarPdfNativo(pdf, nombreArchivo);
+        return;
+    }
+
     pdf.save(nombreArchivo);
+}
+
+async function guardarPdfNativo(pdf, nombreArchivo) {
+    const Filesystem = window.Capacitor?.Plugins?.Filesystem || window.Capacitor?.registerPlugin?.('Filesystem');
+    const Share = window.Capacitor?.Plugins?.Share || window.Capacitor?.registerPlugin?.('Share');
+    if (!Filesystem || !Share) {
+        throw new Error('generarPdfDesdeElemento: plugins Filesystem/Share no disponibles');
+    }
+
+    // "data:application/pdf;filename=...;base64,XXXX" -- Filesystem.writeFile
+    // solo quiere el base64 puro, sin el prefijo de datos.
+    const dataUri = pdf.output('datauristring');
+    const base64 = dataUri.slice(dataUri.indexOf('base64,') + 'base64,'.length);
+
+    const archivo = await Filesystem.writeFile({
+        path: nombreArchivo,
+        data: base64,
+        directory: 'DOCUMENTS',
+        recursive: true
+    });
+
+    await Share.share({ title: nombreArchivo, url: archivo.uri });
 }

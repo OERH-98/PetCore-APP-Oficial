@@ -33,6 +33,39 @@
   document.write('<link rel="stylesheet" id="CSS_TEMA" href="' + rutaTema + '">');
   document.documentElement.setAttribute("data-theme", esOscuro ? "dark" : "light");
 
+  // Login/index NO tienen el header azul de la app (ver tema_temprano.js) --
+  // su fondo es --pc-fondo, blanco casi puro en claro y muy oscuro en
+  // oscuro, así que acá la barra de estado SÍ debe seguir el tema (íconos
+  // oscuros sobre fondo claro, claros sobre fondo oscuro). Sin esto, con el
+  // estilo fijo que capacitor.config.json deja como valor inicial, en modo
+  // claro los íconos (batería, señal) quedaban blancos sobre fondo blanco --
+  // invisibles.
+  function aplicarEstiloBarraDeEstado(oscuro) {
+    try {
+      // Android viejo (comprobado en un Samsung J7 Prime, Android 8): las
+      // llamadas al plugin StatusBar ahí NO arreglan nada -- rompen el color
+      // fijo correcto que ya deja puesto el tema nativo estático (ver
+      // android:statusBarColor/windowLightStatusBar en styles.xml). Login/
+      // index no siguen el tema en Android viejo por esto mismo: se quedan
+      // con el azul institucional fijo, que es peor que "perfecto" pero
+      // mucho mejor que roto/blanco.
+      var version = Number((navigator.userAgent.match(/Android\s+(\d+)/) || [])[1]);
+      if (version && version < 12) return;
+
+      if (!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) return;
+      var StatusBar = (window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar)
+        || (window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("StatusBar"));
+      if (!StatusBar) return;
+
+      // overlaysWebView arranca en false (capacitor.config.json) para que
+      // Android viejo nunca lo toque -- acá, en dispositivos modernos, se
+      // activa el edge-to-edge real (necesario para notch/isla dinámica).
+      StatusBar.setOverlaysWebView({ overlay: true });
+      StatusBar.setStyle({ style: oscuro ? "DARK" : "LIGHT" });
+    } catch (e) { /* no-op fuera de la app nativa */ }
+  }
+  aplicarEstiloBarraDeEstado(esOscuro);
+
   // Tema "sistema": si el usuario cambia el modo claro/oscuro del teléfono con
   // la app abierta, se re-aplica al instante (antes solo se leía al cargar).
   // Con "claro"/"oscuro" fijados no se toca nada.
@@ -46,6 +79,7 @@
       if (enlace) {
         enlace.href = enlace.href.replace(/tema_(claro|oscuro)\.css(\?.*)?$/, "tema_" + (e.matches ? "oscuro" : "claro") + ".css");
       }
+      aplicarEstiloBarraDeEstado(e.matches);
     };
     if (mqTema.addEventListener) mqTema.addEventListener("change", alCambiarSistema);
     else if (mqTema.addListener) mqTema.addListener(alCambiarSistema);

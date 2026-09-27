@@ -28,6 +28,43 @@ export function aplicarTema(valor) {
   if (link) {
     link.href = link.href.replace(/tema_(claro|oscuro)\.css(\?.*)?$/, `tema_${esOscuro ? "oscuro" : "claro"}.css`);
   }
+
+  actualizarBarraDeEstadoNativa(esOscuro);
+}
+
+/* App nativa (Capacitor): misma lógica que tema_temprano.js / tema_temprano_
+   login.js, pero acá cubre el cambio EN VIVO -- tocar los botones de tema en
+   pantalla -- que esos dos scripts no alcanzan (solo corren antes del
+   primer render, una vez por carga de página). */
+function actualizarBarraDeEstadoNativa(esOscuro) {
+  try {
+    // Android viejo (comprobado en un Samsung J7 Prime, Android 8): las
+    // llamadas al plugin StatusBar ahí NO arreglan nada -- rompen el color
+    // fijo correcto que ya deja puesto el tema nativo estático (ver
+    // android:statusBarColor/windowLightStatusBar en styles.xml). Ahí no se
+    // toca nada por JS: se queda con el azul institucional fijo siempre,
+    // que es peor que "perfecto" pero mucho mejor que roto/blanco.
+    const version = Number((navigator.userAgent.match(/Android\s+(\d+)/) || [])[1]);
+    if (version && version < 12) return;
+
+    if (!window.Capacitor?.isNativePlatform?.()) return;
+    const StatusBar = window.Capacitor.Plugins?.StatusBar || window.Capacitor.registerPlugin?.("StatusBar");
+    if (!StatusBar) return;
+
+    // ".pc-con-header" = pantallas con el header azul fijo (dashboard,
+    // citas, Preferencias...) -- ahí los íconos se quedan siempre claros,
+    // sin importar el tema. Login/index no tienen ese header (fondo
+    // --pc-fondo), así que ahí sí siguen el tema.
+    const esPantallaConHeaderAzul = document.body.classList.contains("pc-con-header");
+    const estiloIconos = (esPantallaConHeaderAzul || esOscuro) ? "DARK" : "LIGHT";
+
+    // overlaysWebView arranca en false (capacitor.config.json) para que
+    // Android viejo nunca lo toque -- acá, en dispositivos modernos, se
+    // activa el edge-to-edge real (necesario para notch/isla dinámica).
+    // Repetirlo en cada toggle no hace daño (ya lo dejó puesto tema_temprano.js).
+    StatusBar.setOverlaysWebView({ overlay: true });
+    StatusBar.setStyle({ style: estiloIconos });
+  } catch (e) { /* no-op fuera de la app nativa, o API no disponible en esa versión */ }
 }
 
 /* Cablea un grupo de botones "Claro/Oscuro/Sistema" (cada uno con
