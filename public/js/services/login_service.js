@@ -39,7 +39,10 @@ export function esAppNativa() {
 let socialLoginInicializado = false;
 
 export async function obtenerIdTokenGoogleNativo() {
-  const SocialLogin = window.Capacitor?.Plugins?.SocialLogin;
+  // En Capacitor, Plugins solo trae los plugins ya registrados en JS; como
+  // estas páginas no importan el paquete, se registra el proxy por nombre.
+  const SocialLogin = window.Capacitor?.Plugins?.SocialLogin
+    || window.Capacitor?.registerPlugin?.("SocialLogin");
   if (!SocialLogin) throw new Error("Plugin SocialLogin no disponible");
 
   if (!socialLoginInicializado) {
@@ -54,10 +57,9 @@ export async function obtenerIdTokenGoogleNativo() {
     socialLoginInicializado = true;
   }
 
-  const login = await SocialLogin.login({
-    provider: "google",
-    options: { scopes: ["email", "profile"] }
-  });
+  // Sin "scopes" a propósito: en Android el plugin los exige junto con un
+  // cambio en MainActivity, y el ID token ya trae correo y nombre.
+  const login = await SocialLogin.login({ provider: "google", options: {} });
   return login?.result?.idToken || null;
 }
 

@@ -167,9 +167,10 @@ function iniciarLogin() {
         if (idToken) await iniciarSesionConGoogle(idToken, null);
         else mostrarError("No se pudo obtener tu cuenta de Google.");
       } catch (e) {
+        console.error("Google nativo:", e);
         // Cancelar el selector también cae acá: no se muestra como error
         if (!/cancel/i.test(String(e?.message || e))) {
-          mostrarError("No se pudo iniciar sesión con Google.");
+          mostrarError("No se pudo iniciar sesión con Google: " + (e?.message || e));
         }
       } finally {
         boton.disabled = false;

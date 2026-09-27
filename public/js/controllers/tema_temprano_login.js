@@ -32,4 +32,22 @@
 
   document.write('<link rel="stylesheet" id="CSS_TEMA" href="' + rutaTema + '">');
   document.documentElement.setAttribute("data-theme", esOscuro ? "dark" : "light");
+
+  // Tema "sistema": si el usuario cambia el modo claro/oscuro del teléfono con
+  // la app abierta, se re-aplica al instante (antes solo se leía al cargar).
+  // Con "claro"/"oscuro" fijados no se toca nada.
+  try {
+    var mqTema = window.matchMedia("(prefers-color-scheme: dark)");
+    var alCambiarSistema = function (e) {
+      var fijado = (function () { try { return window.localStorage.getItem("pc_tema_login"); } catch (e) { return null; } })();
+      if (fijado === "claro" || fijado === "oscuro") return;
+      document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "light");
+      var enlace = document.getElementById("CSS_TEMA");
+      if (enlace) {
+        enlace.href = enlace.href.replace(/tema_(claro|oscuro)\.css(\?.*)?$/, "tema_" + (e.matches ? "oscuro" : "claro") + ".css");
+      }
+    };
+    if (mqTema.addEventListener) mqTema.addEventListener("change", alCambiarSistema);
+    else if (mqTema.addListener) mqTema.addListener(alCambiarSistema);
+  } catch (e) { /* sin soporte: solo se aplica al cargar */ }
 })();
