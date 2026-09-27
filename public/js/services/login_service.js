@@ -30,7 +30,7 @@ export const GOOGLE_CLIENT_ID = "242597916961-lgb8pq6foda8670mm0hgk4ftk1clflmg.a
    lleva como audiencia el client ID WEB (webClientId / iOSServerClientId),
    que es el que verifica el backend (GOOGLE_OAUTH_CLIENT_ID). */
 // Client ID de tipo iOS (Google Cloud > Credenciales > ID de cliente de OAuth > iOS)
-const GOOGLE_IOS_CLIENT_ID = "REEMPLAZAR_CON_TU_IOS_CLIENT_ID.apps.googleusercontent.com";
+const GOOGLE_IOS_CLIENT_ID = "242597916961-e292qc6ruschqula1q5m5pgj108avjh1.apps.googleusercontent.com";
 
 export function esAppNativa() {
   return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());

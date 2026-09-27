@@ -28,12 +28,12 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<!-- Client ID de iOS al reves: com.googleusercontent.apps.<NUMERO>-<HASH> -->
-				<string>com.googleusercontent.apps.REEMPLAZAR_CON_TU_IOS_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.242597916961-e292qc6ruschqula1q5m5pgj108avjh1</string>
 			</array>
 		</dict>
 	</array>
 	<key>GIDClientID</key>
-	<string>REEMPLAZAR_CON_TU_IOS_CLIENT_ID.apps.googleusercontent.com</string>
+	<string>242597916961-e292qc6ruschqula1q5m5pgj108avjh1.apps.googleusercontent.com</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
