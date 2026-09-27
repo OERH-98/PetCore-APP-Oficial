@@ -107,6 +107,15 @@ function iniciarDaltonismo(proId) {
 }
 
 function iniciarNotificacionesPush() {
+  // iOS sin cuenta de Apple Developer paga no puede recibir push de
+  // ninguna forma (ver capability Push Notifications, bloqueada en Xcode
+  // sin esa cuenta) -- en vez de mostrar una opción que no hace nada, se
+  // oculta la sección entera y ya. Nadie en iOS se entera de que existía.
+  if (window.Capacitor?.getPlatform?.() === "ios") {
+    document.getElementById("pcSeccionNotificacionesPush")?.classList.add("d-none");
+    return;
+  }
+
   const boton = document.getElementById("pcBtnActivarPush");
   const textoEstado = document.getElementById("pcTextoEstadoPush");
   if (!boton) return;
@@ -115,6 +124,20 @@ function iniciarNotificacionesPush() {
     if (!textoEstado) return;
     textoEstado.textContent = texto;
     textoEstado.classList.remove("d-none");
+  }
+
+  // En la app nativa (Android/iOS) las notificaciones NO pasan por Web
+  // Push -- ver push_fcm_utils.js: se activan solas al iniciar la app y con
+  // cada login (index_controller.js / dashboard_controller.js), sin botón.
+  // soportaPush() de abajo (Web Push del navegador) da falso ahí siempre --
+  // un WebView nativo no implementa esa API -- y mostraba el mensaje
+  // engañoso "este navegador no soporta notificaciones push" aunque sí
+  // estuvieran activas por el otro canal. Se corta acá antes de llegar a
+  // esa lógica, que en este contexto no aplica.
+  if (window.Capacitor?.isNativePlatform?.()) {
+    boton.classList.add("d-none");
+    mostrarEstado("Las notificaciones push están activadas automáticamente en la app.");
+    return;
   }
 
   // El botón alterna entre "Activar"/"Desactivar" -- el estado vive en su
