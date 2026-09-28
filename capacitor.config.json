@@ -18,5 +18,15 @@
       "overlaysWebView": false,
       "style": "DARK"
     }
+  },
+  "ios": {
+    "plugins": {
+      "CapacitorHttp": {
+        "enabled": true
+      },
+      "CapacitorCookies": {
+        "enabled": true
+      }
+    }
   }
 }
