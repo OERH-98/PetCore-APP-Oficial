@@ -17,16 +17,12 @@
     "StatusBar": {
       "overlaysWebView": false,
       "style": "DARK"
-    }
-  },
-  "ios": {
-    "plugins": {
-      "CapacitorHttp": {
-        "enabled": true
-      },
-      "CapacitorCookies": {
-        "enabled": true
-      }
+    },
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "CapacitorCookies": {
+      "enabled": true
     }
   }
 }
