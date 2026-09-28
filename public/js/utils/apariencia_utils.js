@@ -147,7 +147,7 @@ export function aplicarOpacidadFondoInstitucional(proId) {
 }
 
 export async function aplicarFondoInstitucional() {
-  const sesion = obtenerSesion();
+  const sesion = await obtenerSesion();
   if (!sesion || !sesion.pro_id) return;
 
   const config = await obtenerConfiguracionSistemaActual();

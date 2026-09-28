@@ -144,10 +144,10 @@ async function cargarLeidas(sesion) {
   return notificaciones;
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   iniciarLayout();
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   let noLeidasActuales = [];

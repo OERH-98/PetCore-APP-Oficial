@@ -192,10 +192,10 @@ function iniciarNotificacionesPush() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   iniciarLayout();
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   iniciarSelectorTema(".pc-segmentado-btn", `pc_tema_${sesion.pro_id}`);

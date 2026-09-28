@@ -7,19 +7,26 @@
    (nombre propio, distinto al "authToken" de empleado -- así ambas sesiones
    conviven en el mismo navegador sin pisarse), que solo el backend puede
    leer/emitir: requerirSesion() la verifica contra
-   GET /api/auth/me/propietario en cada carga de página (XHR síncrono, no fetch: así
-   el resto del portal puede seguir leyendo sesión.pro_id de forma
-   síncrona al cargar, sin reescribir cada controller a async).
+   GET /api/auth/me/propietario en cada carga de página.
    El resultado vive solo en memoria (no en sessionStorage/localStorage) y
    se recalcula en cada carga de página -- la decisión de "hay sesión o no"
-   siempre la toma el backend. tema_temprano.js, que necesita el pro_id
-   antes del primer render, hace su propio XHR y comparte el resultado con
-   sesion_service.js (window.__pcSesionMe).
+   siempre la toma el backend. tema_temprano.js (cosmético: tema/daltonismo,
+   no seguridad) necesita el pro_id ANTES del primer render y por eso sigue
+   usando su propio XHR síncrono aparte -- ver sesion_temprana_service.js.
    Los fetch/XHR en sí viven en services/sesion_service.js -- este archivo
    solo orquesta (cachea, decide si redirige), igual que el resto de la
    app separa utils/controllers de services.
+
+   ES ASÍNCRONO (requerirSesion()/obtenerSesion() devuelven Promise) a
+   propósito: usa las versiones *Async del service (fetch, no XHR
+   síncrono) porque en iOS el puente nativo que lleva la cookie de sesión
+   entre dominios (CapacitorHttp/CapacitorCookies) solo intercepta
+   peticiones asíncronas -- con XHR síncrono, iOS siempre veía "sin sesión"
+   aunque la cookie fuera válida y expulsaba al propietario justo después
+   de loguearse. Android/desktop no tenían este problema, pero comparten el
+   mismo código: no vale la pena mantener dos rutas.
    ========================================================================== */
-import { verificarSesionSync, obtenerPropietarioSync, invalidarSesionCache } from "../services/sesion_service.js";
+import { verificarSesionAsync, obtenerPropietarioAsync, invalidarSesionCache } from "../services/sesion_service.js";
 
 /* La sesión (id, nombre, correo, foto) vive SOLO en memoria, durante esta
    carga de página: ya no se copia a sessionStorage ni a localStorage, donde
@@ -33,8 +40,9 @@ export function guardarSesion(datos) {
 }
 
 /** Devuelve la sesión de esta carga de página; si todavía no se ha
- *  verificado, la verifica contra el backend (nunca redirige). */
-export function obtenerSesion() {
+ *  verificado, la verifica contra el backend (nunca redirige). Async: ver
+ *  cabecera del archivo. */
+export async function obtenerSesion() {
   return sesionEnMemoria || obtenerSesionVerificada();
 }
 
@@ -54,13 +62,13 @@ export async function cerrarSesion() {
  *  (pro_nombre/pro_apellido/pro_foto_url, que /me no incluye) y la
  *  deja en memoria para esta carga. Devuelve null sin redirigir
  *  a ningún lado si no hay sesión -- quien llama decide qué hacer. */
-export function obtenerSesionVerificada() {
-  const verificacion = verificarSesionSync();
+export async function obtenerSesionVerificada() {
+  const verificacion = await verificarSesionAsync();
   if (!verificacion || !verificacion.authenticated || verificacion.tipo !== "PROPIETARIO") {
     return null;
   }
 
-  const propietario = obtenerPropietarioSync(verificacion.id);
+  const propietario = await obtenerPropietarioAsync(verificacion.id);
 
   const sesion = {
     pro_id: verificacion.id,
@@ -79,8 +87,8 @@ export function obtenerSesionVerificada() {
    httpOnly), SIEMPRE -- nunca confía en un caché viejo, ni siquiera el de
    esta misma pestaña, porque antes un script (o alguien con DevTools)
    podía escribir "pc_sesion" a mano y colarse. Si no hay sesión válida, redirige al login. */
-export function requerirSesion() {
-  const sesion = obtenerSesionVerificada();
+export async function requerirSesion() {
+  const sesion = await obtenerSesionVerificada();
   if (!sesion) {
     window.location.href = "login.html";
     return null;

@@ -22,7 +22,7 @@ async function iniciarDashboard() {
   const carrusel = document.getElementById("pcCarrusel");
   if (!carrusel) return;
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return; // requerirSesion ya redirigió a login.html
 
   const saludo = document.getElementById("pcSaludo");

@@ -18,7 +18,7 @@ async function iniciarFacturas() {
   const lista = document.getElementById("pcListaFacturas");
   if (!lista) return;
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   const resumen = document.getElementById("pcTotalGastado");

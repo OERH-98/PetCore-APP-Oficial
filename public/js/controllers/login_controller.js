@@ -26,13 +26,13 @@ document.addEventListener("DOMContentLoaded", function () {
   iniciarSelectorTema(".pc-tema-toggle-btn", "pc_tema_login");
 });
 
-function iniciarLogin() {
+async function iniciarLogin() {
   const form = document.getElementById("pcFormLogin");
   if (!form) return;
 
   // Si la cookie de sesión sigue siendo válida (verificado contra el
   // backend, no un caché local), no tiene sentido mostrar el login otra vez.
-  if (obtenerSesionVerificada()) {
+  if (await obtenerSesionVerificada()) {
     window.location.href = "dashboard.html";
     return;
   }

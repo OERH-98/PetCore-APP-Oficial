@@ -30,7 +30,7 @@ export function pintarBadgeNotificaciones(cantidad) {
 }
 
 export async function actualizarBadgeNotificaciones() {
-  const sesion = obtenerSesion();
+  const sesion = await obtenerSesion();
   if (!sesion || !sesion.pro_id) return;
   try {
     const { obtenerNoLeidasPorPropietario } = await import("../services/notificaciones_service.js");

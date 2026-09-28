@@ -48,7 +48,7 @@ async function iniciarDetalle() {
   const contenido = document.getElementById("pcFacturaContenido");
   if (!contenido) return;
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   const idSolicitado = paramUrl("id");

@@ -5,10 +5,14 @@
    nunca en utils/controllers (mismo criterio que login_service.js con
    loginPropietario/logout).
 
-   Es XHR SÍNCRONO, no fetch: sesion_utils.js necesita devolver la sesión
-   ya verificada de forma síncrona (requerirSesion() la siguen llamando
-   ~10 controllers como "const sesion = requerirSesion();", sin await),
-   así que esa restricción viene de ahí, no de este archivo.
+   Cada función existe en dos versiones: *Sync (XHR síncrono, para
+   tema_temprano.js, que necesita el pro_id ANTES del primer render) y
+   *Async (fetch, para requerirSesion() en sesion_utils.js -- el gate real
+   de las páginas protegidas). No son intercambiables: en iOS, el puente
+   nativo CapacitorHttp/CapacitorCookies (necesario para que la cookie de
+   sesión viaje en peticiones cruzadas a Heroku) solo puede interceptar
+   peticiones asíncronas, así que la versión síncrona ahí SIEMPRE devuelve
+   "sin sesión" aunque la cookie sea válida.
    ========================================================================== */
 const API_URL_PROPIETARIOS = "https://petcore-8afada45fabc.herokuapp.com/api/propietarios";
 
@@ -73,6 +77,17 @@ export function verificarSesionSync() {
   return window.SesionTempranaService.verificarSesionSync();
 }
 
+/** Igual que verificarSesionSync(), pero con fetch() en vez de XHR síncrono
+ *  -- es la que usa requerirSesion() (el gate real de las páginas
+ *  protegidas): en iOS el puente nativo CapacitorHttp/CapacitorCookies solo
+ *  puede llevar la cookie de sesión en peticiones asíncronas, un XHR
+ *  síncrono lo esquiva y siempre da "sin sesión" ahí aunque la cookie sea
+ *  válida. */
+export async function verificarSesionAsync() {
+  if (!asegurarSesionTempranaService()) return null;
+  return window.SesionTempranaService.verificarSesionAsync();
+}
+
 /** Descarta el resultado memorizado de /me (sesión que cambia sin recargar). */
 export function invalidarSesionCache() {
   if (window.SesionTempranaService) window.SesionTempranaService.invalidarSesionCache();
@@ -82,4 +97,17 @@ export function invalidarSesionCache() {
  *  pro_foto_url), que /me no incluye. */
 export function obtenerPropietarioSync(id) {
   return xhrSincrono(`${API_URL_PROPIETARIOS}/${id}`, true);
+}
+
+/** Igual que obtenerPropietarioSync(), pero con fetch() -- ver
+ *  verificarSesionAsync() para el porqué. */
+export async function obtenerPropietarioAsync(id) {
+  try {
+    const resp = await fetch(conMismoHost(`${API_URL_PROPIETARIOS}/${id}`), { credentials: "include" });
+    if (!resp.ok) return null;
+    return desenvolverApiResponse(await resp.json());
+  } catch (e) {
+    console.error("No se pudo obtener el propietario (async):", e);
+    return null;
+  }
 }

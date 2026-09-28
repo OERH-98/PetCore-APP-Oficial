@@ -19,13 +19,13 @@ import { obtenerSesionVerificada, iniciarSelectorTema } from "./utils.js";
 const CLAVE_IDTOKEN = "pc_google_vinculacion_idtoken";
 const CLAVE_MENSAJE = "pc_google_vinculacion_mensaje";
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   iniciarSelectorTema(".pc-tema-toggle-btn", "pc_tema_login");
 
   const form = document.getElementById("pcFormVincular");
   if (!form) return;
 
-  if (obtenerSesionVerificada()) {
+  if (await obtenerSesionVerificada()) {
     window.location.href = "dashboard.html";
     return;
   }

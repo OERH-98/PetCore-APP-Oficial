@@ -102,7 +102,7 @@ async function iniciarNuevaCita() {
   const form = document.getElementById("pcFormCita");
   if (!form) return;
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   const selMascota = document.getElementById("pcCitaMascota");

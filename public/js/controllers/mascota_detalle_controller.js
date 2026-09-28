@@ -97,7 +97,7 @@ async function iniciarDetalle() {
   const carnet = document.getElementById("pcCarnet");
   if (!carnet) return;
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   const idSolicitado = paramUrl("id");

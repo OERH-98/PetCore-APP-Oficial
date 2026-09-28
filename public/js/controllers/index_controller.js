@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // preguntó antes.
   pedirPermisoPushNativo();
 
-  window.setTimeout(function () {
-    window.location.href = obtenerSesion() ? "pages/dashboard.html" : "pages/login.html";
+  window.setTimeout(async function () {
+    window.location.href = (await obtenerSesion()) ? "pages/dashboard.html" : "pages/login.html";
   }, TIEMPO_MINIMO_MS);
 });

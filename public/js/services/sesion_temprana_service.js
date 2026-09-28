@@ -57,11 +57,52 @@
     return datos;
   }
 
+  // Caché SEPARADA de la de verificarSesionSync(): un XHR síncrono no lo
+  // puede interceptar el puente nativo CapacitorHttp/CapacitorCookies (ese
+  // puente pasa mensajes a nativo de forma asíncrona, y una petición
+  // síncrona no puede esperar esa respuesta), así que en iOS ese XHR
+  // siempre falla aunque SÍ haya sesión válida -- lo usa solo
+  // tema_temprano.js, que es cosmético (tema/daltonismo) y puede vivir con
+  // ese "sin sesión" temporal. requerirSesion() (el gate real de las
+  // páginas protegidas) usa ESTA versión con fetch() en su lugar, que sí
+  // pasa por el puente nativo y sí lleva la cookie en iOS.
+  // Memoizado con la promesa misma (no un booleano aparte): una vez creada,
+  // siempre se devuelve esa MISMA promesa -- pendiente o ya resuelta, da
+  // igual, un .then() sobre una promesa ya resuelta sigue funcionando bien.
+  var promesaAsync = null;
+
+  function verificarSesionAsync() {
+    if (promesaAsync) return promesaAsync;
+
+    promesaAsync = fetch(conMismoHost(API_URL_ME), { credentials: "include" })
+      .then(function (resp) {
+        if (!resp.ok) return null;
+        return resp.json().then(desenvolverApiResponse);
+      })
+      .catch(function (e) {
+        console.error("No se pudo verificar la sesión (async):", e);
+        return null;
+      })
+      .then(function (resultado) {
+        // Comparte el resultado con la caché síncrona: si tema_temprano.js
+        // todavía no corrió (o corrió y falló en iOS), que reutilice este
+        // resultado en vez de repetir la petición.
+        if (!verificada) { verificada = true; datos = resultado; }
+        return resultado;
+      });
+    return promesaAsync;
+  }
+
   /** Descarta lo memorizado (sesión que cambia sin recargar la página). */
   function invalidarSesionCache() {
     verificada = false;
     datos = null;
+    promesaAsync = null;
   }
 
-  window.SesionTempranaService = { verificarSesionSync: verificarSesionSync, invalidarSesionCache: invalidarSesionCache };
+  window.SesionTempranaService = {
+    verificarSesionSync: verificarSesionSync,
+    verificarSesionAsync: verificarSesionAsync,
+    invalidarSesionCache: invalidarSesionCache
+  };
 })();

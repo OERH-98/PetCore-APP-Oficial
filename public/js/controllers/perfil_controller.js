@@ -13,7 +13,7 @@ async function iniciarPerfil() {
   const datos = document.getElementById("pcDatosPerfil");
   if (!datos) return;
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   function quitarEsqueletosEncabezado() {
@@ -94,10 +94,10 @@ async function iniciarPerfil() {
   }).join("");
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   iniciarLayout();
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   iniciarPerfil();

@@ -25,7 +25,7 @@ async function iniciarCitas() {
   const proximas = document.getElementById("pcCitasProximas");
   if (!proximas) return;
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   const anteriores = document.getElementById("pcCitasAnteriores");

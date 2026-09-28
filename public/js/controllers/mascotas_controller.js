@@ -41,7 +41,7 @@ async function iniciarMascotas() {
   const lista = document.getElementById("pcListaMascotas");
   if (!lista) return;
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   const contador = document.getElementById("pcContadorMascotas");

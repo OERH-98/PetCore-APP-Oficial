@@ -153,8 +153,8 @@ function iniciarFormulario(sesion) {
       : actualizarParcialPropietario(sesion.pro_id, datosTexto);
 
     promesa
-      .then(function (actualizado) {
-        const sesionActual = obtenerSesion() || {};
+      .then(async function (actualizado) {
+        const sesionActual = (await obtenerSesion()) || {};
         guardarSesion({
           ...sesionActual,
           pro_nombre: actualizado.pro_nombre,
@@ -182,10 +182,10 @@ function iniciarFormulario(sesion) {
   });
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   iniciarLayout();
 
-  const sesion = requerirSesion();
+  const sesion = await requerirSesion();
   if (!sesion) return;
 
   cargarDatosActuales(sesion);
