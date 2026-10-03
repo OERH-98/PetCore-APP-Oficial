@@ -22,7 +22,7 @@
    propietario tenga que recargar la página.
    ========================================================================== */
 import {
-  iniciarLayout, requerirSesion, pintarBadgeNotificaciones,
+  iniciarLayout, requerirSesion, pintarBadgeNotificaciones, notificacionEsParaMi,
   vacio, error as vacioError, quitarEsqueleto, escaparHtml, alertar
 } from "./utils.js";
 import { obtenerNoLeidasPorPropietario, obtenerLeidasPorPropietario, marcarComoLeida } from "../services/notificaciones_service.js";
@@ -214,7 +214,14 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   import("../services/websocket_service.js").then(function (ws) {
-    ws.suscribir("NOTIFICACION_NUEVA", function () {
+    // Solo si la notificación nueva va dirigida a ESTE propietario (el WS
+    // la difunde a todos los celulares conectados) -- ver
+    // notificacionEsParaMi() en utils.js.
+    ws.suscribir("NOTIFICACION_NUEVA", async function (datos) {
+      if (!(await notificacionEsParaMi(datos, sesion))) return;
+      cargarNoLeidas(sesion).then(function (n) { noLeidasActuales = n; });
+    });
+    ws.suscribir("WS_RECONECTADO", function () {
       cargarNoLeidas(sesion).then(function (n) { noLeidasActuales = n; });
     });
   });

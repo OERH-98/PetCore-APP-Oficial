@@ -10,8 +10,21 @@
    "NOTIFICACION_NUEVA" (nueva fila en TBL_NOTIFICACION_DESTINATARIO para
    este propietario) -- dashboard, citas y notificaciones se suscriben
    para refrescarse solas.
+
+   Heartbeat + reconexión con espera creciente (ver el mismo archivo del
+   frontend de escritorio para el detalle): el router de Heroku corta toda
+   conexión sin tráfico a los 55 s, y en un celular además la red cambia
+   (wifi <-> datos) o el equipo duerme sin que el navegador se entere. Se
+   manda un "ping" de texto cada 25 s esperando "pong"; si no llega, se
+   reconecta. Al volver a conectar se emite el evento sintético
+   "WS_RECONECTADO" para que las páginas revaliden lo que se perdió.
    ========================================================================== */
 const WS_URL = "wss://petcore-8afada45fabc.herokuapp.com/ws";
+
+const INTERVALO_PING_MS = 25000;
+const TIMEOUT_PONG_MS = 10000;
+const REINTENTO_MIN_MS = 1000;
+const REINTENTO_MAX_MS = 30000;
 
 // Mismo truco que fetch_con_credenciales.js/sesion_service.js, pero para el
 // WebSocket: si esta página no se sirve desde "localhost" (Live Server en
@@ -27,21 +40,81 @@ function conMismoHost(url) {
 }
 
 let socket = null;
+let temporizadorPing = null;
+let temporizadorPong = null;
+let temporizadorReintento = null;
+let intentos = 0;
+let yaConectoAntes = false;
 const suscriptores = new Map(); // evento -> Set<callback>
+
+function emitir(evento, datos) {
+    const callbacks = suscriptores.get(evento);
+    if (!callbacks) return;
+    callbacks.forEach(cb => {
+        try { cb(datos); } catch (error) { console.error(`[WS] Error en suscriptor de "${evento}":`, error); }
+    });
+}
+
+function detenerHeartbeat() {
+    clearInterval(temporizadorPing);
+    clearTimeout(temporizadorPong);
+    temporizadorPing = null;
+    temporizadorPong = null;
+}
+
+function iniciarHeartbeat(sock) {
+    detenerHeartbeat();
+    temporizadorPing = setInterval(() => {
+        if (sock !== socket || sock.readyState !== WebSocket.OPEN) return;
+        try {
+            sock.send("ping");
+        } catch (error) {
+            sock.close();
+            return;
+        }
+        clearTimeout(temporizadorPong);
+        temporizadorPong = setTimeout(() => {
+            console.warn("[WS] Sin respuesta al ping, se reconecta");
+            try { sock.close(); } catch (error) { /* ya cerrado */ }
+        }, TIMEOUT_PONG_MS);
+    }, INTERVALO_PING_MS);
+}
+
+function programarReintento() {
+    clearTimeout(temporizadorReintento);
+    const espera = Math.min(REINTENTO_MAX_MS, REINTENTO_MIN_MS * 2 ** intentos);
+    intentos++;
+    temporizadorReintento = setTimeout(conectar, espera * (0.75 + Math.random() * 0.5));
+}
 
 export function conectar() {
     if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
         return; // ya conectado o conectando, no duplicar
     }
+    clearTimeout(temporizadorReintento);
 
+    let sock;
     try {
-        socket = new WebSocket(conMismoHost(WS_URL));
+        sock = new WebSocket(conMismoHost(WS_URL));
     } catch (error) {
         console.warn("[WS] No se pudo abrir la conexión:", error);
+        programarReintento();
         return;
     }
+    socket = sock;
 
-    socket.addEventListener("message", (mensaje) => {
+    sock.addEventListener("open", () => {
+        intentos = 0;
+        iniciarHeartbeat(sock);
+        if (yaConectoAntes) emitir("WS_RECONECTADO");
+        yaConectoAntes = true;
+    });
+
+    sock.addEventListener("message", (mensaje) => {
+        // Cualquier mensaje del servidor prueba que la conexión sigue viva.
+        clearTimeout(temporizadorPong);
+        if (mensaje.data === "pong") return;
+
         let cuerpo;
         try {
             cuerpo = JSON.parse(mensaje.data);
@@ -49,26 +122,38 @@ export function conectar() {
             console.warn("[WS] Mensaje no es JSON válido:", error);
             return;
         }
-        const callbacks = suscriptores.get(cuerpo.evento);
-        if (!callbacks) return;
-        callbacks.forEach(cb => {
-            try { cb(cuerpo.datos); } catch (error) { console.error(`[WS] Error en suscriptor de "${cuerpo.evento}":`, error); }
-        });
+        emitir(cuerpo.evento, cuerpo.datos);
     });
 
-    // Reconexión simple: si el socket se cae (backend reiniciado, red
-    // caída, etc.) se reintenta cada 3s hasta que vuelva a responder.
-    socket.addEventListener("close", () => {
-        setTimeout(conectar, 3000);
+    // Un socket viejo que cierra tarde no debe pisar al nuevo.
+    sock.addEventListener("close", () => {
+        if (sock !== socket) return;
+        detenerHeartbeat();
+        programarReintento();
     });
-    socket.addEventListener("error", () => {
-        socket.close();
+    sock.addEventListener("error", () => {
+        sock.close();
     });
 }
 
+// Al volver a la app (o recuperar la red) no tiene sentido esperar al
+// siguiente reintento programado: se reconecta ya.
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && (!socket || socket.readyState === WebSocket.CLOSED)) {
+        intentos = 0;
+        conectar();
+    }
+});
+window.addEventListener("online", () => {
+    if (!socket || socket.readyState === WebSocket.CLOSED) {
+        intentos = 0;
+        conectar();
+    }
+});
+
 /** Cualquier controller de página puede suscribirse a un evento del
  *  backend (ver EventoWebSocketHandler.difundir) sin tener que manejar la
- *  conexión él mismo. */
+ *  conexión él mismo. Además existe el evento sintético "WS_RECONECTADO". */
 export function suscribir(evento, callback) {
     if (!suscriptores.has(evento)) suscriptores.set(evento, new Set());
     suscriptores.get(evento).add(callback);
