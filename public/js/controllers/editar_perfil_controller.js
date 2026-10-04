@@ -14,7 +14,8 @@
        sobreescribe todos a la vez. Tampoco pide contraseña: si "config" no
        trae pro_contrasenia, el backend conserva la que ya tenía.
    ========================================================================== */
-import { obtenerPropietarioPorId, actualizarParcialPropietario, actualizarPropietario } from "../services/propietarios_service.js";
+import { obtenerPropietarioPorId, actualizarParcialPropietario, actualizarPropietario, desvincularGooglePropietario } from "../services/propietarios_service.js";
+import { esAppNativa, obtenerIdTokenGoogleNativo } from "../services/login_service.js";
 import { iniciarLayout, requerirSesion, guardarSesion, obtenerSesion, quitarEsqueleto, mostrarToast } from "./utils.js";
 
 let propietarioOriginal = null;
@@ -64,6 +65,8 @@ async function cargarDatosActuales(sesion) {
   campos.correo.readOnly = correoBloqueado;
   document.getElementById("pcEditCorreoIconoBloqueado")?.classList.toggle("d-none", !correoBloqueado);
   document.getElementById("pcEditCorreoAyudaBloqueado")?.classList.toggle("d-none", !correoBloqueado);
+  document.getElementById("pcBtnDesvincularGoogle")?.classList.toggle("d-none", !correoBloqueado);
+  document.getElementById("pcCardGoogle")?.classList.toggle("d-none", !correoBloqueado);
 
   if (inicial) inicial.textContent = (propietario.pro_nombre || "").charAt(0) + (propietario.pro_apellido || "").charAt(0);
   if (propietario.pro_foto_url && preview && inicial) {
@@ -77,6 +80,136 @@ async function cargarDatosActuales(sesion) {
     inicial.classList.add("d-none");
   }
   quitarEsqueleto(retrato);
+}
+
+/* Desvincular la cuenta de Google para poder cambiar el correo -- en un apartado propio de la pantalla (no en un
+   cuadro emergente). Dos variantes según la cuenta:
+   - Con contraseña propia: se pide la contraseña actual.
+   - Solo con Google: se crea una contraseña (para no quedarse sin forma de entrar) y se confirma con Google
+     (re-login con la misma cuenta). Esto último solo existe en la app nativa. */
+function iniciarDesvincularGoogle(sesion) {
+  const tarjeta = document.getElementById("pcCardGoogle");
+  const botonAbrir = document.getElementById("pcBtnAbrirDesvincular");
+  const botonIrDesdeCorreo = document.getElementById("pcBtnDesvincularGoogle");
+  const form = document.getElementById("pcFormDesvincular");
+  const error = document.getElementById("pcDesvError");
+  const bloqueContrasenia = document.getElementById("pcDesvConContrasenia");
+  const bloqueSoloGoogle = document.getElementById("pcDesvSoloGoogle");
+  const inputContrasenia = document.getElementById("pcDesvContrasenia");
+  const inputNueva = document.getElementById("pcDesvNueva");
+  const inputConfirma = document.getElementById("pcDesvConfirma");
+  const botonConfirmar = document.getElementById("pcBtnConfirmarDesvincular");
+  const botonCancelar = document.getElementById("pcBtnCancelarDesvincular");
+  if (!tarjeta || !form) return;
+
+  const tieneContrasenia = () => !!(propietarioOriginal && propietarioOriginal.pro_tiene_contrasenia);
+
+  function mostrarError(mensaje) {
+    error.textContent = mensaje;
+    error.classList.remove("d-none");
+  }
+
+  function abrirFormulario() {
+    error.classList.add("d-none");
+    form.classList.remove("was-validated");
+    bloqueContrasenia.classList.toggle("d-none", !tieneContrasenia());
+    bloqueSoloGoogle.classList.toggle("d-none", tieneContrasenia());
+    botonConfirmar.textContent = tieneContrasenia() ? "Desvincular" : "Continuar con Google";
+    form.classList.remove("d-none");
+    botonAbrir.classList.add("d-none");
+    tarjeta.scrollIntoView({ behavior: "smooth", block: "center" });
+    (tieneContrasenia() ? inputContrasenia : inputNueva).focus();
+  }
+
+  function cerrarFormulario() {
+    form.reset();
+    form.classList.add("d-none");
+    form.classList.remove("was-validated");
+    error.classList.add("d-none");
+    inputConfirma.setCustomValidity("");
+    botonAbrir.classList.remove("d-none");
+  }
+
+  botonAbrir.addEventListener("click", abrirFormulario);
+  botonCancelar.addEventListener("click", cerrarFormulario);
+  // Desde el aviso del campo de correo: lleva al apartado y lo abre
+  if (botonIrDesdeCorreo) {
+    botonIrDesdeCorreo.addEventListener("click", function () {
+      tarjeta.classList.remove("d-none");
+      abrirFormulario();
+    });
+  }
+
+  form.addEventListener("submit", async function (evento) {
+    evento.preventDefault();
+    evento.stopPropagation();
+    error.classList.add("d-none");
+
+    let datos = null;
+
+    if (tieneContrasenia()) {
+      if (!inputContrasenia.value) {
+        form.classList.add("was-validated");
+        inputContrasenia.focus();
+        return;
+      }
+      datos = { contrasenia: inputContrasenia.value };
+    } else {
+      if (!esAppNativa()) {
+        mostrarError("Para desvincular tu cuenta de Google usa la app instalada en tu teléfono.");
+        return;
+      }
+      inputConfirma.setCustomValidity(inputNueva.value === inputConfirma.value ? "" : "No coinciden");
+      if (!form.checkValidity() || inputNueva.value.length < 8) {
+        form.classList.add("was-validated");
+        (inputNueva.value.length < 8 ? inputNueva : inputConfirma).focus();
+        return;
+      }
+    }
+
+    const textoOriginal = botonConfirmar.innerHTML;
+    botonConfirmar.disabled = true;
+    botonCancelar.disabled = true;
+    botonConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando';
+
+    try {
+      if (!datos) {
+        // Re-login con la MISMA cuenta de Google: demuestra que es la dueña del enlace
+        let idToken = null;
+        try {
+          idToken = await obtenerIdTokenGoogleNativo();
+        } catch (e) { /* se maneja abajo */ }
+        if (!idToken) {
+          mostrarError("No se pudo confirmar con Google. Intenta de nuevo.");
+          return;
+        }
+        datos = { idToken: idToken, contraseniaNueva: inputNueva.value };
+      }
+
+      await desvincularGooglePropietario(sesion.pro_id, datos);
+
+      // Listo: el correo queda editable y el apartado desaparece
+      if (propietarioOriginal) {
+        propietarioOriginal.pro_google_vinculado = false;
+        propietarioOriginal.pro_tiene_contrasenia = true;
+      }
+      cerrarFormulario();
+      tarjeta.classList.add("d-none");
+      const correo = document.getElementById("pcEditCorreo");
+      correo.readOnly = false;
+      document.getElementById("pcEditCorreoIconoBloqueado")?.classList.add("d-none");
+      document.getElementById("pcEditCorreoAyudaBloqueado")?.classList.add("d-none");
+      mostrarToast("success", "Cuenta de Google desvinculada. Ya puedes cambiar tu correo.");
+      correo.scrollIntoView({ behavior: "smooth", block: "center" });
+      correo.focus();
+    } catch (err) {
+      mostrarError(err?.message || "No se pudo desvincular la cuenta de Google.");
+    } finally {
+      botonConfirmar.disabled = false;
+      botonCancelar.disabled = false;
+      botonConfirmar.innerHTML = textoOriginal;
+    }
+  });
 }
 
 function iniciarSelectorFoto() {
@@ -191,4 +324,5 @@ document.addEventListener("DOMContentLoaded", async function () {
   cargarDatosActuales(sesion);
   iniciarSelectorFoto();
   iniciarFormulario(sesion);
+  iniciarDesvincularGoogle(sesion);
 });

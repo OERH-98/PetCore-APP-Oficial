@@ -15,10 +15,12 @@ export * from "../utils/apariencia_utils.js";
 export * from "../utils/notificaciones_utils.js";
 export * from "../utils/alertas_utils.js";
 export * from "../utils/html_utils.js";
+export * from "../utils/navegacion_atras.js";
 
 import { cerrarSesion, obtenerSesion } from "../utils/sesion_utils.js";
 import { aplicarFondoInstitucional, refrescarFondoInstitucional } from "../utils/apariencia_utils.js";
 import { actualizarBadgeNotificaciones } from "../utils/notificaciones_utils.js";
+import { iniciarNavegacionAtras } from "../utils/navegacion_atras.js";
 
 /* ========================================================================
    LAYOUT COMÚN — nav inferior y botón(es) de cerrar sesión
@@ -85,6 +87,7 @@ export async function notificacionEsParaMi(datos, sesion) {
 export function iniciarLayout() {
   iniciarBottomNav();
   iniciarCerrarSesion();
+  iniciarNavegacionAtras();
   aplicarFondoInstitucional();
   actualizarBadgeNotificaciones();
 

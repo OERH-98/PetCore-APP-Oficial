@@ -15,7 +15,7 @@
    del portal, dashboard incluido, ya espera esos campos en sesion).
    ========================================================================== */
 import { loginPropietario, loginPropietarioConGoogle, GOOGLE_CLIENT_ID, esAppNativa, obtenerIdTokenGoogleNativo } from "../services/login_service.js";
-import { obtenerSesionVerificada, iniciarSelectorTema } from "./utils.js";
+import { obtenerSesionVerificada, iniciarSelectorTema, iniciarNavegacionAtras } from "./utils.js";
 
 /* Toggle de tema propio de login.html: pantalla "fuera de la app", así que
    usa su propia preferencia global (pc_tema_login) en vez de una por
@@ -24,6 +24,7 @@ import { obtenerSesionVerificada, iniciarSelectorTema } from "./utils.js";
    tema_temprano_login.js). */
 document.addEventListener("DOMContentLoaded", function () {
   iniciarSelectorTema(".pc-tema-toggle-btn", "pc_tema_login");
+  iniciarNavegacionAtras(); // atrás del teléfono: en el login pide confirmar para salir
 });
 
 async function iniciarLogin() {
@@ -33,7 +34,7 @@ async function iniciarLogin() {
   // Si la cookie de sesión sigue siendo válida (verificado contra el
   // backend, no un caché local), no tiene sentido mostrar el login otra vez.
   if (await obtenerSesionVerificada()) {
-    window.location.href = "dashboard.html";
+    window.location.replace("dashboard.html");
     return;
   }
 
@@ -93,7 +94,7 @@ async function iniciarLogin() {
       .then(function () {
         // La sesión ya quedó en la cookie httpOnly: el dashboard la lee del
         // backend con requerirSesion(), no hay nada que guardar acá.
-        window.location.href = "dashboard.html";
+        window.location.replace("dashboard.html");
       })
       .catch(function (err) {
         // Auth_API responde 401 con "Credenciales de propietario inválidas"
@@ -117,7 +118,7 @@ async function iniciarLogin() {
   async function iniciarSesionConGoogle(idToken, contraseniaConfirmacion) {
     try {
       await loginPropietarioConGoogle(idToken, contraseniaConfirmacion);
-      window.location.href = "dashboard.html";
+      window.location.replace("dashboard.html");
     } catch (err) {
       // 409: ya existe una cuenta con este correo y con SU PROPIA
       // contraseña -- hace falta confirmarla una vez para completar el

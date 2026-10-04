@@ -14,13 +14,14 @@
    la pestaña abierta en esta página después de cancelar.
    ========================================================================== */
 import { loginPropietarioConGoogle } from "../services/login_service.js";
-import { obtenerSesionVerificada, iniciarSelectorTema } from "./utils.js";
+import { obtenerSesionVerificada, iniciarSelectorTema, iniciarNavegacionAtras } from "./utils.js";
 
 const CLAVE_IDTOKEN = "pc_google_vinculacion_idtoken";
 const CLAVE_MENSAJE = "pc_google_vinculacion_mensaje";
 
 document.addEventListener("DOMContentLoaded", async function () {
   iniciarSelectorTema(".pc-tema-toggle-btn", "pc_tema_login");
+  iniciarNavegacionAtras();
 
   const form = document.getElementById("pcFormVincular");
   if (!form) return;

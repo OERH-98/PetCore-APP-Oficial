@@ -10,10 +10,11 @@ import {
     verificarCodigoRecuperacion,
     restablecerContraseniaConCodigo
 } from "../services/recuperar_contrasena_service.js";
-import { iniciarSelectorTema } from "./utils.js";
+import { iniciarSelectorTema, iniciarNavegacionAtras } from "./utils.js";
 
 document.addEventListener("DOMContentLoaded", function () {
     iniciarSelectorTema(".pc-tema-toggle-btn", "pc_tema_login");
+    iniciarNavegacionAtras();
 });
 
 function iniciarRecuperarContrasena() {

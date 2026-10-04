@@ -78,9 +78,12 @@
         <input type="email" class="form-control skeleton skeleton-texto" id="pcEditCorreo" required maxlength="100">
         <div class="invalid-feedback">Escribe un correo válido.</div>
         <small class="text-secondary d-block mt-1 d-none" id="pcEditCorreoAyudaBloqueado">
-          No se puede cambiar: tu cuenta está vinculada con Google, y el correo es la llave de ese enlace. Si
-          necesitas corregirlo, pide ayuda en la clínica.
+          Tu cuenta está vinculada con Google y el correo es la llave de ese enlace. Para cambiarlo, desvincula
+          primero tu cuenta de Google.
         </small>
+        <button type="button" class="btn btn-outline-primary btn-sm mt-2 d-none" id="pcBtnDesvincularGoogle">
+          <i class="fa-brands fa-google me-1"></i>Ir a desvincular cuenta de Google
+        </button>
       </div>
 
       <div class="mb-3">
@@ -106,6 +109,48 @@
         <i class="fa-solid fa-shield-halved me-1"></i>No necesitas tu contraseña para actualizar estos datos.
       </p>
     </form>
+
+    <!-- Apartado propio para desvincular Google (solo si la cuenta está vinculada) -->
+    <section class="pc-card p-3 p-sm-4 mt-3 d-none animate__animated animate__fadeInUp animate__faster" id="pcCardGoogle" aria-labelledby="pcGoogleTitulo">
+      <h2 class="h6 fw-bold mb-1" id="pcGoogleTitulo"><i class="fa-brands fa-google me-2"></i>Cuenta de Google vinculada</h2>
+      <p class="pc-meta mb-3">Tu cuenta inicia sesión con Google. Para poder cambiar tu correo electrónico debes desvincularla primero; después podrás volver a vincular otra cuenta de Google.</p>
+
+      <button type="button" class="btn btn-outline-primary w-100" id="pcBtnAbrirDesvincular">
+        <i class="fa-solid fa-link-slash me-2"></i>Desvincular cuenta de Google
+      </button>
+
+      <form class="d-none mt-3 needs-validation" id="pcFormDesvincular" novalidate>
+        <div id="pcDesvError" class="alert alert-danger py-2 small d-none" role="alert"></div>
+
+        <div id="pcDesvConContrasenia" class="d-none">
+          <p class="pc-meta">Para confirmar que eres tú, escribe tu contraseña actual.</p>
+          <div class="mb-3">
+            <label class="form-label" for="pcDesvContrasenia">Contraseña actual</label>
+            <input type="password" class="form-control" id="pcDesvContrasenia" autocomplete="current-password" maxlength="300">
+            <div class="invalid-feedback">Escribe tu contraseña actual.</div>
+          </div>
+        </div>
+
+        <div id="pcDesvSoloGoogle" class="d-none">
+          <p class="pc-meta">Tu cuenta solo inicia sesión con Google. Crea una contraseña para seguir entrando cuando la desvincules; después te pediremos confirmar con tu cuenta de Google.</p>
+          <div class="mb-3">
+            <label class="form-label" for="pcDesvNueva">Contraseña nueva</label>
+            <input type="password" class="form-control" id="pcDesvNueva" autocomplete="new-password" minlength="8" maxlength="300">
+            <div class="invalid-feedback">Mínimo 8 caracteres.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="pcDesvConfirma">Repite la contraseña</label>
+            <input type="password" class="form-control" id="pcDesvConfirma" autocomplete="new-password" maxlength="300">
+            <div class="invalid-feedback">Las contraseñas no coinciden.</div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary w-50" id="pcBtnCancelarDesvincular">Cancelar</button>
+          <button type="submit" class="btn btn-primary w-50" id="pcBtnConfirmarDesvincular">Desvincular</button>
+        </div>
+      </form>
+    </section>
   </main>
 
   <!-- Bootstrap 5 JS Bundle -->

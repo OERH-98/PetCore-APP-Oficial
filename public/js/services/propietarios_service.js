@@ -28,6 +28,31 @@ export async function verificarContraseniaPropietario(id, contrasenia) {
     }
 }
 
+// POST /api/auth/propietario/{id}/desvincular-google -- quita el enlace con Google para poder cambiar el correo.
+// datos: { contrasenia } si la cuenta tiene contraseña propia; { idToken, contraseniaNueva } si solo entra con
+// Google (se confirma con Google y se crea una contraseña en el mismo paso).
+export async function desvincularGooglePropietario(id, datos) {
+    try {
+        const respuesta = await fetch(`${API_URL_AUTH_PROPIETARIO}/${id}/desvincular-google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(datos)
+        });
+
+        if (!respuesta.ok) {
+            const json = await respuesta.json().catch(() => null);
+            const error = new Error(json?.message || "No se pudo desvincular la cuenta de Google");
+            error.status = respuesta.status;
+            error.details = json?.details || null;
+            throw error;
+        }
+        return true;
+    } catch (error) {
+        console.error("Error al desvincular Google:", error);
+        throw error;
+    }
+}
+
 // PATCH /api/auth/propietario/{id}/contrasenia (API_Auth_PetCore) --
 // cambio autoservicio (exige la actual).
 export async function cambiarContraseniaPropietario(id, contraseniaActual, contraseniaNueva) {
