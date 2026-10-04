@@ -123,10 +123,14 @@ async function iniciarDetalle() {
       boton.disabled = true;
       boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generando...';
       try {
-        await generarPdfDesdeElemento("#pcFacturaContenido", {
+        const resultado = await generarPdfDesdeElemento("#pcFacturaContenido", {
           titulo: "Factura",
           nombreArchivo: ("factura_" + numero).replace(/\s+/g, "_") + ".pdf"
         });
+        // En la app el PDF se guarda en el teléfono (no se abre la hoja de compartir): se avisa dónde quedó.
+        if (resultado && resultado.nativo) {
+          alertar({ icon: "success", title: "PDF descargado", text: "Se guardó en " + resultado.ubicacion + "." });
+        }
       } catch (e) {
         console.error("No se pudo generar el PDF de la factura:", e);
         alertar({ icon: "error", title: "No se pudo generar el PDF", text: "Intenta de nuevo." });

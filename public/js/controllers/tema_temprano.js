@@ -151,7 +151,7 @@
   }
 
   function matrizDaltonismoActual() {
-    var id = (sesionActual() || {}).pro_id;
+    var id = proId;
     if (!id) return null;
     var tipo = window.localStorage.getItem("pc_daltonismo_" + id) || "ninguno";
     var base = MATRICES_DALTONISMO[tipo];
@@ -162,19 +162,56 @@
     return base.map(function (valor, i) { return MATRIZ_IDENTIDAD[i] + t * (valor - MATRIZ_IDENTIDAD[i]); }).join(", ");
   }
 
+  /* ALTO CONTRASTE: se apoya en data-theme (claro/oscuro, ya puesto en <html>) para elegir paleta, así funciona con
+     los dos temas, y su filtro "contrast()" se ENCADENA con el de daltonismo (url(#...) contrast(...)): los dos
+     funcionan a la vez. Sobreescribe las variables --pc-* (todo el diseño las usa) y refuerza bordes y foco. */
+  var CSS_ALTO_CONTRASTE =
+    'html[data-contraste="alto"][data-theme="light"]{' +
+      '--pc-fondo:#FFFFFF;--pc-superficie:#FFFFFF;--pc-texto:#000000;--pc-texto-suave:#2B3340;--pc-texto-fuerte:#000000;' +
+      '--pc-borde:#1F2733;--pc-azul:#0B3C8A;--pc-azul-oscuro:#06265A;--pc-azul-claro:#DCE8FA;' +
+      '--pc-ok:#0B6B3A;--pc-aviso:#8A4B00;--pc-critico:#A5120B;--bs-border-color:#1F2733;--bs-secondary-color:#2B3340;}' +
+    'html[data-contraste="alto"][data-theme="dark"]{' +
+      '--pc-fondo:#000000;--pc-superficie:#0A0A0A;--pc-texto:#FFFFFF;--pc-texto-suave:#E6E9ED;--pc-texto-fuerte:#FFFFFF;' +
+      '--pc-borde:#FFFFFF;--pc-azul:#7DB2FF;--pc-azul-oscuro:#1C3D6B;--pc-azul-claro:#0F2036;' +
+      '--pc-ok:#5BE39A;--pc-aviso:#FFB454;--pc-critico:#FF8A84;--bs-border-color:#FFFFFF;--bs-secondary-color:#E6E9ED;}' +
+    'html[data-contraste="alto"] :is(.pc-card,.form-control,.form-select,.pc-select-input,.pc-select-lista,.dropdown-menu,.badge,.alert,.swal2-popup){border:2px solid var(--pc-borde)!important;}' +
+    'html[data-contraste="alto"] .pc-meta,html[data-contraste="alto"] .text-secondary,html[data-contraste="alto"] .text-muted{color:var(--pc-texto-suave)!important;opacity:1!important;}' +
+    'html[data-contraste="alto"] :is(a,button,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #FFBF00!important;outline-offset:2px!important;}';
+
+  function contrasteActivo() {
+    return !!proId && window.localStorage.getItem("pc_contraste_" + proId) === "true";
+  }
+
+  function marcarContrasteEnHtml() {
+    if (contrasteActivo()) document.documentElement.setAttribute("data-contraste", "alto");
+    else document.documentElement.removeAttribute("data-contraste");
+  }
+
   function cssAccesibilidadActual() {
-    var id = (sesionActual() || {}).pro_id;
+    var id = proId;
     var css = "";
     if (id && window.localStorage.getItem("pc_animaciones_" + id) === "false") {
       css += ".animate__animated{ animation: none !important; transition: none !important; }";
     }
-    css += matrizDaltonismoActual()
-      ? "html{ filter: url(#filtro-daltonismo-dinamico) !important; }"
+    var filtros = [];
+    if (matrizDaltonismoActual()) filtros.push("url(#filtro-daltonismo-dinamico)");
+    if (contrasteActivo()) {
+      filtros.push("contrast(1.25)");
+      css += CSS_ALTO_CONTRASTE;
+    }
+    css += filtros.length
+      ? "html{ filter: " + filtros.join(" ") + " !important; }"
       : "html{ filter: none; }";
     return css;
   }
 
   window.aplicarAccesibilidadEnTiempoReal = function () {
+    // Si al cargar no se pudo saber el propietario (consulta de red fallida), se reintenta con el último conocido
+    // (lo anota sesion_utils.js al verificar la sesión): así cambiar un ajuste en Preferencias surte efecto al instante.
+    if (!proId) {
+      try { proId = window.localStorage.getItem("pc_ultimo_pro_id") || null; } catch (e) { /* sin localStorage */ }
+    }
+    marcarContrasteEnHtml();
     var estilo = document.getElementById("ESTILO_ACCESIBILIDAD_DINAMICO");
     if (!estilo) {
       estilo = document.createElement("style");
@@ -200,6 +237,7 @@
 
   // Primera pintura: mismo contenido, escrito con document.write para que
   // no haya parpadeo (igual que el tema).
+  marcarContrasteEnHtml();
   document.write('<style id="ESTILO_ACCESIBILIDAD_DINAMICO">' + cssAccesibilidadActual() + "</style>");
 
   var matrizInicial = matrizDaltonismoActual();

@@ -8,12 +8,14 @@
 import { obtenerMascotasPorPropietario } from "../services/mascotas_service.js";
 import { obtenerCitasPorMascota } from "../services/citas_service.js";
 import { obtenerCartillasPorMascota } from "../services/cartillas_service.js";
+import { obtenerAntiparasitariosPorMascota } from "../services/antiparasitarios_service.js";
+import { generarPdfCartilla } from "../utils/pdf_utils.js";
 import { obtenerExpedientesPorMascota } from "../services/expedientes_service.js";
 import { obtenerCuidadosDeMascota } from "../services/cuidados_service.js";
 import {
   iniciarLayout, requerirSesion, paramUrl, edadTexto, badge, bloqueFecha,
   retrato, vacio, fechaLarga, soloFecha, nombreEmpleado, error as vacioError,
-  quitarEsqueleto, escaparHtml
+  quitarEsqueleto, escaparHtml, alertar
 } from "./utils.js";
 
 function iniciarPestanias() {
@@ -93,6 +95,44 @@ function renderizarCuidados(contenedor, datos) {
   contenedor.innerHTML = htmlResult;
 }
 
+/* Botón "Descargar cartilla digital": junta las vacunas ya cargadas (o las vuelve a pedir si fallaron) y los
+   antiparasitarios, y guarda el PDF en el teléfono. */
+function iniciarDescargaCartilla(mascota, sesion, vacunasCargadas) {
+  const boton = document.getElementById("pcBtnCartilla");
+  if (!boton) return;
+  boton.classList.remove("d-none");
+
+  boton.addEventListener("click", async function () {
+    const original = boton.innerHTML;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando cartilla...';
+    try {
+      const [vacunas, antiparasitarios] = await Promise.all([
+        vacunasCargadas ? Promise.resolve(vacunasCargadas) : obtenerCartillasPorMascota(mascota.mas_id),
+        obtenerAntiparasitariosPorMascota(mascota.mas_id)
+      ]);
+      const ordenar = function (lista, campo) {
+        return (lista || []).slice().sort(function (a, b) { return new Date(b[campo]) - new Date(a[campo]); });
+      };
+      const resultado = await generarPdfCartilla({
+        mascota: mascota,
+        propietario: sesion.nombre || "",
+        vacunas: ordenar(vacunas, "car_fecha_vacunacion"),
+        antiparasitarios: ordenar(antiparasitarios, "ap_fecha_aplicacion")
+      });
+      if (resultado && resultado.nativo) {
+        alertar({ icon: "success", title: "Cartilla descargada", text: "Se guardó en " + resultado.ubicacion + "." });
+      }
+    } catch (e) {
+      console.error("No se pudo generar la cartilla digital:", e);
+      alertar({ icon: "error", title: "No se pudo generar la cartilla", text: "Intenta de nuevo." });
+    } finally {
+      boton.disabled = false;
+      boton.innerHTML = original;
+    }
+  });
+}
+
 async function iniciarDetalle() {
   const carnet = document.getElementById("pcCarnet");
   if (!carnet) return;
@@ -166,6 +206,9 @@ async function iniciarDetalle() {
   } else {
     panelCitas.innerHTML = vacioError("No se pudieron cargar las citas.");
   }
+
+  // --- Cartilla digital (PDF): vacunas + antiparasitarios + datos de la mascota ---
+  iniciarDescargaCartilla(m, sesion, cartillas.status === "fulfilled" ? (cartillas.value || []) : null);
 
   // --- Vacunas (cartillas) ---
   const panelVacunas = document.getElementById("pcVacunas");

@@ -407,11 +407,8 @@ function dibujarBloques(pdf, bloques, { titulo, logo }) {
 }
 
 /**
- * Genera y descarga un PDF a partir de un elemento del DOM ya renderizado,
- * dibujando su contenido (tablas, títulos, pares etiqueta/valor) como
- * texto y tablas vectoriales de verdad -- no una captura de pantalla ni el
- * diálogo de impresión del navegador -- con membrete formal (logo de
- * PetCore, título, fecha) y pie de página paginado en cada hoja.
+ * Genera y GUARDA un PDF a partir de un elemento del DOM ya renderizado, dibujando su contenido (tablas, títulos,
+ * pares etiqueta/valor) como texto y tablas vectoriales de verdad, con membrete formal y pie paginado.
  *
  * @param {HTMLElement|string} elementoOSelector - elemento o selector CSS del contenido a exportar.
  * @param {Object} [opciones]
@@ -419,6 +416,7 @@ function dibujarBloques(pdf, bloques, { titulo, logo }) {
  * @param {string} [opciones.titulo] - título del documento, mostrado junto al logo en el membrete.
  * @param {string[]} [opciones.ocultarSelectores] - selectores (buscados dentro del elemento) que se
  *        excluyen del documento -- botones, menús de "más opciones", etc.
+ * @returns {Promise<{nativo: boolean, ubicacion: string}>} dónde quedó el archivo (para avisárselo al usuario).
  */
 export async function generarPdfDesdeElemento(elementoOSelector, opciones = {}) {
     const elemento = typeof elementoOSelector === 'string'
@@ -431,51 +429,132 @@ export async function generarPdfDesdeElemento(elementoOSelector, opciones = {}) 
 
     const { nombreArchivo = 'documento.pdf', titulo = 'Documento PetCore', ocultarSelectores = [] } = opciones;
 
-    const [, logo] = await Promise.all([asegurarLibreriasPdf(), cargarLogoPetcore()]);
-
     const elementosExcluidos = new Set(
         ocultarSelectores.flatMap(selector => Array.from(elemento.querySelectorAll(selector)))
     );
 
-    const bloques = extraerBloques(elemento, elementosExcluidos);
+    return generarPdfDesdeBloques(extraerBloques(elemento, elementosExcluidos), { nombreArchivo, titulo });
+}
+
+/* Dibuja los bloques en un PDF y lo guarda. Común a los PDFs hechos desde el DOM (facturas) y a los armados con datos
+   (cartilla digital). */
+async function generarPdfDesdeBloques(bloques, { nombreArchivo, titulo }) {
+    const [, logo] = await Promise.all([asegurarLibreriasPdf(), cargarLogoPetcore()]);
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'pt', 'a4');
     dibujarBloques(pdf, bloques, { titulo, logo });
 
-    // pdf.save() descarga con un <a download> sintético -- funciona en
-    // cualquier navegador real, pero los WebView nativos (Android/iOS,
-    // Capacitor) lo ignoran en silencio: el PDF se genera pero nunca hay
-    // diálogo de guardado ni archivo en ningún lado. Ahí hay que escribirlo
-    // a disco con el plugin Filesystem y abrir la hoja de compartir nativa
-    // (el usuario elige "Guardar en Archivos", enviarlo, etc.) -- no existe
-    // un "Downloads" universal al que escribir directo sin eso.
+    // pdf.save() descarga con un <a download> sintético -- funciona en cualquier navegador real, pero los WebView
+    // nativos (Android/iOS, Capacitor) lo ignoran en silencio. Ahí se escribe el archivo a disco con el plugin
+    // Filesystem (carpeta Documentos): queda guardado de verdad, sin abrir la hoja de compartir.
     if (window.Capacitor?.isNativePlatform?.()) {
-        await guardarPdfNativo(pdf, nombreArchivo);
-        return;
+        return guardarPdfNativo(pdf, nombreArchivo);
     }
 
     pdf.save(nombreArchivo);
+    return { nativo: false, ubicacion: 'la carpeta de descargas de tu navegador' };
 }
 
 async function guardarPdfNativo(pdf, nombreArchivo) {
     const Filesystem = window.Capacitor?.Plugins?.Filesystem || window.Capacitor?.registerPlugin?.('Filesystem');
-    const Share = window.Capacitor?.Plugins?.Share || window.Capacitor?.registerPlugin?.('Share');
-    if (!Filesystem || !Share) {
-        throw new Error('generarPdfDesdeElemento: plugins Filesystem/Share no disponibles');
+    if (!Filesystem) {
+        throw new Error('generarPdf: plugin Filesystem no disponible');
+    }
+    const plataforma = window.Capacitor?.getPlatform?.();
+
+    // Android antiguo (≤ 9) pide permiso de almacenamiento para escribir en carpetas públicas; en versiones nuevas
+    // la llamada no pide nada. Si el usuario lo niega, el writeFile de abajo falla y se avisa.
+    if (plataforma === 'android' && Filesystem.requestPermissions) {
+        try { await Filesystem.requestPermissions(); } catch (e) { /* se intenta escribir igual */ }
     }
 
-    // "data:application/pdf;filename=...;base64,XXXX" -- Filesystem.writeFile
-    // solo quiere el base64 puro, sin el prefijo de datos.
+    // "data:application/pdf;filename=...;base64,XXXX" -- Filesystem.writeFile solo quiere el base64 puro.
     const dataUri = pdf.output('datauristring');
     const base64 = dataUri.slice(dataUri.indexOf('base64,') + 'base64,'.length);
 
-    const archivo = await Filesystem.writeFile({
+    await Filesystem.writeFile({
         path: nombreArchivo,
         data: base64,
         directory: 'DOCUMENTS',
         recursive: true
     });
 
-    await Share.share({ title: nombreArchivo, url: archivo.uri });
+    return {
+        nativo: true,
+        ubicacion: plataforma === 'ios'
+            ? 'la app Archivos, en "En mi iPhone" > PetCore'
+            : 'la carpeta Documentos de tu teléfono'
+    };
+}
+
+/* =====================================================================
+   CARTILLA DIGITAL DE UNA MASCOTA
+   ===================================================================== */
+
+function fechaCorta(valor) {
+    if (!valor) return '—';
+    const iso = String(valor).slice(0, 10);
+    const [a, m, d] = iso.split('-');
+    return (a && m && d) ? `${d}/${m}/${a}` : '—';
+}
+
+/**
+ * Genera y guarda la cartilla digital (datos de la mascota, vacunas y antiparasitarios) como PDF.
+ * @param {{mascota: Object, propietario: string, vacunas: Object[], antiparasitarios: Object[]}} datos
+ * @returns {Promise<{nativo: boolean, ubicacion: string}>}
+ */
+export async function generarPdfCartilla({ mascota, propietario, vacunas = [], antiparasitarios = [] }) {
+    const bloques = [];
+
+    bloques.push({ tipo: 'titulo', texto: 'Datos de la mascota' });
+    [
+        ['Nombre', mascota.mas_nombre || '—'],
+        ['Especie', mascota.nombreEspecie || '—'],
+        ['Raza', mascota.nombreRaza || '—'],
+        ['Sexo', mascota.mas_genero || '—'],
+        ['Fecha de nacimiento', fechaCorta(mascota.mas_fecha_nac)],
+        ['Peso', mascota.mas_peso_kg != null ? `${mascota.mas_peso_kg} kg` : 'No registrado'],
+        ['Propietario', propietario || '—']
+    ].forEach(par => bloques.push({ tipo: 'fila', partes: par, negrita: false }));
+
+    bloques.push({ tipo: 'titulo', texto: 'Vacunas' });
+    if (vacunas.length) {
+        bloques.push({
+            tipo: 'tabla',
+            head: [['Vacuna', 'Fecha', 'Lote', 'Próxima dosis', 'Estado']],
+            body: vacunas.map(v => [
+                v.nombreProducto || v.car_nombre_externo || 'Vacuna',
+                fechaCorta(v.car_fecha_vacunacion),
+                v.car_lote_aplicado || '—',
+                fechaCorta(v.car_proxima_cita_recomendada),
+                v.car_estado || '—'
+            ])
+        });
+    } else {
+        bloques.push({ tipo: 'texto', texto: 'Aún no hay vacunas registradas en la cartilla.', negrita: false });
+    }
+
+    bloques.push({ tipo: 'titulo', texto: 'Antiparasitarios' });
+    if (antiparasitarios.length) {
+        bloques.push({
+            tipo: 'tabla',
+            head: [['Producto', 'Tipo', 'Aplicación', 'Próxima aplicación', 'Estado']],
+            body: antiparasitarios.map(a => [
+                a.nombreProducto || a.ap_nombre_externo || 'Antiparasitario',
+                a.ap_tipo || '—',
+                fechaCorta(a.ap_fecha_aplicacion),
+                fechaCorta(a.ap_fecha_prox_aplicacion),
+                a.ap_estado || '—'
+            ])
+        });
+    } else {
+        bloques.push({ tipo: 'texto', texto: 'Aún no hay antiparasitarios registrados.', negrita: false });
+    }
+
+    const nombreLimpio = String(mascota.mas_nombre || 'mascota').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_');
+    return generarPdfDesdeBloques(bloques, {
+        titulo: `Cartilla digital · ${mascota.mas_nombre || 'Mascota'}`,
+        nombreArchivo: `cartilla_${nombreLimpio}.pdf`
+    });
 }

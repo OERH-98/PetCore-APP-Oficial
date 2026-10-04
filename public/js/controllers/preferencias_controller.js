@@ -62,6 +62,19 @@ function iniciarAnimaciones(proId) {
   });
 }
 
+function iniciarAltoContraste(proId) {
+  const check = document.getElementById("pcSwitchAltoContraste");
+  if (!check) return;
+
+  const clave = `pc_contraste_${proId}`;
+  check.checked = localStorage.getItem(clave) === "true";
+
+  check.addEventListener("change", function () {
+    localStorage.setItem(clave, String(check.checked));
+    reaplicarAccesibilidad();
+  });
+}
+
 function iniciarDaltonismo(proId) {
   const select = document.getElementById("pcFiltroDaltonismo");
   const input = document.getElementById("pcIntensidadDaltonismo");
@@ -201,6 +214,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   iniciarSelectorTema(".pc-segmentado-btn", `pc_tema_${sesion.pro_id}`);
   iniciarOpacidadFondo(sesion.pro_id);
   iniciarAnimaciones(sesion.pro_id);
+  iniciarAltoContraste(sesion.pro_id);
   iniciarDaltonismo(sesion.pro_id);
   iniciarNotificacionesPush();
 });
