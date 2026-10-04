@@ -12,6 +12,8 @@
    registro completo con obtenerPropietarioPorId(idPropietario) después de
    este login para tener pro_nombre/pro_apellido/pro_correo reales.
    ========================================================================== */
+import { marcarCierreDeSesion, limpiarMarcaCierreDeSesion } from "./sesion_service.js";
+
 const API_URL_LOGIN = "https://petcore-8afada45fabc.herokuapp.com/api/auth/login/propietario";
 const API_URL_LOGIN_GOOGLE = "https://petcore-8afada45fabc.herokuapp.com/api/auth/login/propietario/google";
 const API_URL_LOGOUT = "https://petcore-8afada45fabc.herokuapp.com/api/auth/logout";
@@ -68,10 +70,34 @@ export async function obtenerIdTokenGoogleNativo() {
 // No lanza si falla: quien llama (cerrarSesion en sesion_utils.js) igual
 // limpia localStorage y redirige al login aunque el backend no responda.
 export async function logout() {
+    // Primero la marca local: aunque el servidor no responda o la cookie no se borre (iOS), la app ya considera
+    // cerrada la sesión (ver sesion_service.js).
+    marcarCierreDeSesion();
+
     try {
-        await fetch(API_URL_LOGOUT, { method: "POST" });
+        // Con cuerpo y Content-Type explícitos: el puente nativo de iOS (CapacitorHttp) es más fiable con un POST
+        // "completo" que con uno sin cuerpo.
+        await fetch(API_URL_LOGOUT, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: "{}"
+        });
     } catch (error) {
         console.warn("No se pudo cerrar la sesión en el servidor:", error);
+    }
+
+    // iOS/Android nativo: además del Set-Cookie del servidor, se limpian las cookies del puente nativo.
+    try {
+        const cookies = window.Capacitor?.isNativePlatform?.()
+            ? (window.Capacitor.Plugins?.CapacitorCookies || window.Capacitor.registerPlugin?.("CapacitorCookies"))
+            : null;
+        if (cookies) {
+            await cookies.deleteCookie?.({ url: "https://petcore-8afada45fabc.herokuapp.com", key: "authTokenPropietario" }).catch(() => {});
+            await cookies.clearAllCookies?.().catch(() => {});
+        }
+    } catch (error) {
+        console.warn("No se pudieron limpiar las cookies nativas:", error);
     }
 }
 
@@ -104,6 +130,7 @@ export async function loginPropietario(correo, contrasena) {
             throw error;
         }
 
+        limpiarMarcaCierreDeSesion();
         return cuerpo;
     }
     catch (error) {
@@ -140,6 +167,7 @@ export async function loginPropietarioConGoogle(idToken, contrasenia) {
             throw error;
         }
 
+        limpiarMarcaCierreDeSesion();
         return cuerpo;
     }
     catch (error) {

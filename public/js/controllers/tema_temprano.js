@@ -29,6 +29,16 @@
   var sesion = sesionActual();
   var proId = sesion && sesion.pro_id;
 
+  // Último propietario conocido en ESTE dispositivo. La consulta de arriba es una petición de red (síncrona) y
+  // puede fallar un instante (servidor dormido/ocupado, 503, sin señal): sin esto, el tema y la accesibilidad
+  // guardados no se encontraban y la app caía al tema del sistema, "ignorando" el modo oscuro elegido. Si la
+  // consulta responde, se actualiza; si no, se reutiliza el último (la página igual redirige al login si de
+  // verdad no hay sesión). Solo es un id numérico para leer preferencias cosméticas, no da ningún acceso.
+  try {
+    if (proId) window.localStorage.setItem("pc_ultimo_pro_id", String(proId));
+    else proId = window.localStorage.getItem("pc_ultimo_pro_id") || null;
+  } catch (e) { /* sin localStorage: se queda como estaba */ }
+
   /* -------------------------------------------------------------------
      1. TEMA: swap real de <link> (no solo una variable CSS), para poder
         editar cada paleta en su propio archivo.

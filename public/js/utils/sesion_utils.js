@@ -26,7 +26,7 @@
    de loguearse. Android/desktop no tenían este problema, pero comparten el
    mismo código: no vale la pena mantener dos rutas.
    ========================================================================== */
-import { verificarSesionAsync, obtenerPropietarioAsync, invalidarSesionCache } from "../services/sesion_service.js";
+import { verificarSesionAsync, obtenerPropietarioAsync, invalidarSesionCache, cierreDeSesionMarcado } from "../services/sesion_service.js";
 
 /* La sesión (id, nombre, correo, foto) vive SOLO en memoria, durante esta
    carga de página: ya no se copia a sessionStorage ni a localStorage, donde
@@ -63,6 +63,9 @@ export async function cerrarSesion() {
  *  deja en memoria para esta carga. Devuelve null sin redirigir
  *  a ningún lado si no hay sesión -- quien llama decide qué hacer. */
 export async function obtenerSesionVerificada() {
+  // Cerró sesión en este dispositivo: se respeta aunque la cookie siga viva (ver sesion_service.js).
+  if (cierreDeSesionMarcado()) return null;
+
   const verificacion = await verificarSesionAsync();
   if (!verificacion || !verificacion.authenticated || verificacion.tipo !== "PROPIETARIO") {
     return null;
@@ -80,7 +83,20 @@ export async function obtenerSesionVerificada() {
   };
 
   guardarSesion(sesion);
+  recordarUltimoPropietario(sesion.pro_id);
   return sesion;
+}
+
+/* tema_temprano.js decide el tema (claro/oscuro) y la accesibilidad ANTES del primer render y, para saber de quién
+   son las preferencias, hace una consulta de red SÍNCRONA. En iOS esa consulta nunca funciona y en cualquier
+   plataforma puede fallar un instante: entonces no encontraba el tema guardado y la app volvía al modo claro al
+   salir de Preferencias. Como acá la sesión SÍ se verifica (async, la que funciona en todas partes), se deja anotado
+   el id del último propietario para que tema_temprano.js lo use cuando su propia consulta no responda. Es solo un
+   número para leer preferencias cosméticas; no da ningún acceso. */
+function recordarUltimoPropietario(proId) {
+  try {
+    if (proId) window.localStorage.setItem("pc_ultimo_pro_id", String(proId));
+  } catch (e) { /* sin localStorage: tema_temprano usa su propia consulta */ }
 }
 
 /* Protege una página: verifica la sesión contra el backend (cookie
@@ -90,7 +106,7 @@ export async function obtenerSesionVerificada() {
 export async function requerirSesion() {
   const sesion = await obtenerSesionVerificada();
   if (!sesion) {
-    window.location.href = "login.html";
+    window.location.replace("login.html");
     return null;
   }
   return sesion;

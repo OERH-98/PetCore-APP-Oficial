@@ -185,6 +185,10 @@ a:focus-visible, button:focus-visible, .btn:focus-visible,
   background-size: 14px;
 }
 .pc-select-input--vacio{ color: var(--pc-texto-suave); }
+/* Con una opción elegida: borde azul y texto en seminegrita, para distinguirlo del "sin elegir" */
+.pc-select-input--elegido{ border-color: var(--pc-azul); font-weight: 600; }
+/* Cargando: texto suave con spinner (el spinner lo pone el JS) */
+.pc-select-input--cargando{ color: var(--pc-texto-suave); cursor: progress; opacity: .8; background-image: none; }
 .pc-select-input:disabled{ cursor: not-allowed; opacity: .6; }
 
 .pc-select-lista{
@@ -214,13 +218,39 @@ a:focus-visible, button:focus-visible, .btn:focus-visible,
    + blanco que ya usa .active (abajo), que sí tiene contraste real en los
    dos temas: --pc-azul es #2D60A1 en claro y #5B9BFF en oscuro, siempre
    bastante más claro/saturado que el fondo de la lista. */
-.pc-select-lista .dropdown-item:hover{
-  background-color: var(--pc-azul);
-  color: #ffffff;
+/* Antes el hover y el elemento seleccionado usaban el MISMO azul sólido y no se distinguía cuál estaba elegido.
+   Ahora: pasar el dedo/mouse o presionar = un tinte suave (solo con puntero real: en iOS :hover se queda
+   "pegado" tras un toque); elegido = tinte más fuerte + barra azul + texto en negrita + palomita. */
+.pc-select-lista .dropdown-item:active{
+  background-color: rgba(45, 96, 161, .16);
+  background-color: color-mix(in srgb, var(--pc-azul) 16%, transparent);
+  color: var(--pc-texto);
 }
-.pc-select-lista .dropdown-item.active{
-  background-color: var(--pc-azul);
-  color: #ffffff;
+@media (hover: hover){
+  .pc-select-lista .dropdown-item:hover{
+    background-color: rgba(45, 96, 161, .12);
+    background-color: color-mix(in srgb, var(--pc-azul) 12%, transparent);
+    color: var(--pc-texto);
+  }
+}
+.pc-select-lista .dropdown-item.active,
+.pc-select-lista .dropdown-item.active:hover,
+.pc-select-lista .dropdown-item.active:active{
+  background-color: rgba(45, 96, 161, .28);
+  background-color: color-mix(in srgb, var(--pc-azul) 28%, transparent);
+  color: var(--pc-texto);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--pc-azul);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.pc-select-lista .dropdown-item.active::after{
+  content: "\2713";
+  color: var(--pc-azul);
+  font-weight: 800;
+  flex: 0 0 auto;
 }
 .pc-select-lista .dropdown-item.disabled{
   cursor: default;

@@ -116,6 +116,28 @@ export function crearSelectPersonalizado(select, opciones = {}) {
     const texto = textoDeOpcionActual();
     boton.textContent = texto || placeholder;
     boton.classList.toggle("pc-select-input--vacio", !texto);
+    // Con una opción realmente elegida (valor no vacío) el botón se marca distinto al "sin elegir"
+    boton.classList.toggle("pc-select-input--elegido", !!select.value);
+  }
+
+  // Estado "cargando": el botón queda deshabilitado con un spinner y el texto indicado hasta que se llame a
+  // refrescar() (o a establecerCargando(false)). Evita que un select vacío parezca "sin datos" mientras llegan.
+  let cargando = false;
+  function establecerCargando(activo, texto) {
+    cargando = !!activo;
+    if (cargando) {
+      cerrarLista();
+      boton.innerHTML = `<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>${escaparHtml(texto || "Cargando…")}`;
+      boton.classList.add("pc-select-input--cargando");
+      boton.classList.remove("pc-select-input--vacio", "pc-select-input--elegido");
+      boton.setAttribute("aria-busy", "true");
+      boton.disabled = true;
+    } else {
+      boton.classList.remove("pc-select-input--cargando");
+      boton.removeAttribute("aria-busy");
+      pintarTextoActual();
+      boton.disabled = select.disabled;
+    }
   }
 
   function construirLista() {
@@ -138,7 +160,7 @@ export function crearSelectPersonalizado(select, opciones = {}) {
   }
 
   function abrirLista() {
-    if (boton.disabled) return;
+    if (boton.disabled || cargando) return;
     construirLista();
     posicionarLista();
     lista.classList.add("show");
@@ -202,10 +224,15 @@ export function crearSelectPersonalizado(select, opciones = {}) {
 
   return {
     // Llamar después de repintar las <option> del select o de cambiar su
-    // .value por código, para que el botón refleje lo actual.
+    // .value por código, para que el botón refleje lo actual. También termina el estado "cargando".
     refrescar() {
+      if (cargando) {
+        establecerCargando(false);
+        return;
+      }
       pintarTextoActual();
       boton.disabled = select.disabled;
-    }
+    },
+    establecerCargando
   };
 }

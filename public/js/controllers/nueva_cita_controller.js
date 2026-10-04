@@ -20,7 +20,7 @@
 import { obtenerMascotasPorPropietario } from "../services/mascotas_service.js";
 import { obtenerServiciosActivos } from "../services/servicios_service.js";
 import { obtenerEmpleados } from "../services/empleados_service.js";
-import { obtenerCitas, crearCita } from "../services/citas_service.js";
+import { obtenerCitasPorRango, crearCita } from "../services/citas_service.js";
 import { obtenerDiasFeriados } from "../services/dias_feriados_service.js";
 import { iniciarLayout, requerirSesion, dinero, soloFecha, esFechaFeriado, mostrarToast, escaparHtml } from "./utils.js";
 import { crearSelectPersonalizado } from "../utils/selector_personalizado.js";
@@ -102,9 +102,6 @@ async function iniciarNuevaCita() {
   const form = document.getElementById("pcFormCita");
   if (!form) return;
 
-  const sesion = await requerirSesion();
-  if (!sesion) return;
-
   const selMascota = document.getElementById("pcCitaMascota");
   const selCategoria = document.getElementById("pcCitaServicioCategoria");
   const selServicio = document.getElementById("pcCitaServicio");
@@ -117,6 +114,15 @@ async function iniciarNuevaCita() {
   const personalizadoMascota = crearSelectPersonalizado(selMascota, { placeholder: "Elige una mascota" });
   const personalizadoCategoria = crearSelectPersonalizado(selCategoria, { placeholder: "Todas las categorías" });
   const personalizadoServicio = crearSelectPersonalizado(selServicio, { placeholder: "Elige un servicio" });
+
+  // Mientras llegan los datos, los selects lo indican (antes quedaban vacíos y parecía que no había nada). Va ANTES
+  // de verificar la sesión: esa petición también tarda y, con el servidor despertando, podía ser varios segundos.
+  personalizadoMascota?.establecerCargando(true, "Cargando mascotas…");
+  personalizadoCategoria?.establecerCargando(true, "Cargando categorías…");
+  personalizadoServicio?.establecerCargando(true, "Cargando servicios…");
+
+  const sesion = await requerirSesion();
+  if (!sesion) return;
 
   let mascotas = [];
   let servicios = [];
@@ -144,24 +150,43 @@ async function iniciarNuevaCita() {
     placeholder: "Elige una fecha",
     estaDeshabilitada: function (fechaISO) { return esFechaFeriado(feriados, fechaISO); }
   });
+  // Fecha mínima (hoy) y ventana de citas que hace falta conocer para la disponibilidad: de hoy a +180 días.
+  const hoy = new Date();
+  const aISO = function (f) {
+    return f.getFullYear() + "-" + String(f.getMonth() + 1).padStart(2, "0") + "-" + String(f.getDate()).padStart(2, "0");
+  };
+  const isoHoy = aISO(hoy);
+  const limiteVentana = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 180);
+
   try {
-    [mascotas, servicios, empleados, citas] = await Promise.all([
+    [mascotas, servicios, empleados] = await Promise.all([
       obtenerMascotasPorPropietario(sesion.pro_id),
       obtenerServiciosActivos(),
-      obtenerEmpleados(),
-      obtenerCitas()
+      obtenerEmpleados()
     ]);
     mascotas = mascotas || [];
     servicios = servicios || [];
     empleados = empleados || [];
-    citas = citas || [];
   } catch (e) {
     selMascota.innerHTML = '<option value="" selected disabled>No se pudo cargar la información</option>';
     selServicio.innerHTML = '<option value="" selected disabled>No se pudo cargar la información</option>';
     personalizadoMascota?.refrescar();
+    personalizadoCategoria?.refrescar();
     personalizadoServicio?.refrescar();
     boton.disabled = true;
     return;
+  }
+
+  // Las citas existentes SOLO sirven para atenuar horarios ocupados y elegir un veterinario libre: antes se pedía
+  // TODA la tabla de citas de la clínica (GET /api/citas), que con el servidor ocupado respondía 503 y tumbaba el
+  // formulario completo. Ahora se pide solo la ventana próxima (/api/citas/rango) y, si falla, el formulario sigue
+  // funcionando: el backend valida disponibilidad de todas formas al agendar.
+  try {
+    citas = (await obtenerCitasPorRango(isoHoy, aISO(limiteVentana))) || [];
+  } catch (e) {
+    console.warn("No se pudo consultar la disponibilidad de horarios:", e);
+    citas = [];
+    mostrarToast("warning", "No se pudo verificar la disponibilidad de horarios; el servidor la confirmará al agendar.");
   }
 
   // Aparte del Promise.all de arriba: no es crítico para poder agendar --
@@ -176,6 +201,8 @@ async function iniciarNuevaCita() {
   if (!mascotas.length) {
     selMascota.innerHTML = '<option value="" selected disabled>Aún no tienes mascotas registradas</option>';
     personalizadoMascota?.refrescar();
+    personalizadoCategoria?.refrescar();
+    personalizadoServicio?.refrescar();
     boton.disabled = true;
     return;
   }
@@ -205,12 +232,14 @@ async function iniciarNuevaCita() {
 
     const seleccionPrevia = selServicio.value;
 
+    // El servicio es OPCIONAL: la primera opción (vacía) se puede volver a elegir para quitar la selección y
+    // la clínica lo determina. cit_ser_id viaja null si no se elige (la BD y la API lo permiten).
     selServicio.innerHTML = filtrados.length
-      ? '<option value="" selected disabled>Elige un servicio</option>' +
+      ? '<option value="" selected>Sin elegir (lo decide la clínica)</option>' +
         filtrados.map(function (s) {
           return '<option value="' + s.ser_id + '">' + escaparHtml(s.ser_nombre) + " — " + dinero(s.ser_costo) + "</option>";
         }).join("")
-      : '<option value="" selected disabled>No hay servicios en esta categoría</option>';
+      : '<option value="" selected>No hay servicios en esta categoría</option>';
 
     // Conserva la selección si el servicio elegido sigue en el filtro actual
     if (filtrados.some(function (s) { return String(s.ser_id) === seleccionPrevia; })) {
@@ -227,10 +256,6 @@ async function iniciarNuevaCita() {
   repintarServicios();
 
   // La cita no puede quedar en el pasado
-  const hoy = new Date();
-  const isoHoy = hoy.getFullYear() + "-" +
-    String(hoy.getMonth() + 1).padStart(2, "0") + "-" +
-    String(hoy.getDate()).padStart(2, "0");
   fecha.min = isoHoy;
 
   // Las citas son siempre en punto o y media (step="1800" en el HTML, mismo
@@ -241,13 +266,16 @@ async function iniciarNuevaCita() {
   // la validación de 30 min en CitasService), esto es solo para no dejar
   // elegir a simple vista un horario que se sabe de antemano que fallará.
 
-  // Mostrar el costo del servicio elegido
+  // Mostrar el costo del servicio elegido (y ocultarlo si se vuelve a "Sin elegir")
   selServicio.addEventListener("change", function () {
     const s = servicios.find(function (x) { return Number(x.ser_id) === Number(selServicio.value); });
     const costo = document.getElementById("pcCitaCosto");
-    if (s && costo) {
+    if (!costo) return;
+    if (s) {
       costo.textContent = "Costo estimado del servicio: " + dinero(s.ser_costo) + " más IVA.";
       costo.classList.remove("d-none");
+    } else {
+      costo.classList.add("d-none");
     }
   });
 
@@ -281,7 +309,8 @@ async function iniciarNuevaCita() {
     const nuevaCita = {
       cit_mas_id: Number(selMascota.value),
       cit_emp_id: Number(vet.emp_id),
-      cit_ser_id: Number(selServicio.value),
+      // Opcional: sin servicio elegido viaja null y recepción lo asigna al revisar la cita
+      cit_ser_id: selServicio.value ? Number(selServicio.value) : null,
       cit_fecha_cita: fecha.value,
       cit_hora_inicio: hora.value,
       cit_motivo: motivo.value.trim(),

@@ -18,6 +18,25 @@ export async function obtenerCitas() {
     }
 }
 
+// GET /api/citas/rango?desde=yyyy-MM-dd&hasta=yyyy-MM-dd -- solo las citas de ese rango de fechas (el formulario
+// de agendar solo necesita las próximas para saber qué horarios están ocupados, no toda la tabla de la clínica).
+export async function obtenerCitasPorRango(desde, hasta) {
+    try {
+        const respuesta = await fetch(`${API_URL}/rango?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`);
+
+        if (!respuesta.ok) {
+            console.error("Error al obtener las citas del rango");
+            throw new Error("Error al obtener las citas del rango");
+        }
+
+        return await respuesta.json();
+    }
+    catch (error) {
+        console.error("Error en obtenerCitasPorRango:", error);
+        throw error;
+    }
+}
+
 // GET /api/citas/mascota/{masId} — solo las citas de una mascota (usado en el
 // detalle de mascota, en vez de traer todas las citas de la clínica y filtrar
 // "las de esta mascota" en el cliente).

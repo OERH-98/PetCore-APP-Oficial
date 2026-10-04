@@ -44,17 +44,17 @@
 
       <div class="mb-3">
         <label class="form-label" for="pcCitaMascota">Mascota</label>
-        <select class="form-select" id="pcCitaMascota" required></select>
+        <select class="form-select" id="pcCitaMascota" required><option value="" selected disabled>Cargando mascotas…</option></select>
         <div class="invalid-feedback">Elige la mascota que será atendida.</div>
       </div>
 
       <div class="mb-3">
         <label class="form-label" for="pcCitaServicioCategoria">Categoría</label>
-        <select class="form-select mb-2" id="pcCitaServicioCategoria"></select>
+        <select class="form-select mb-2" id="pcCitaServicioCategoria"><option value="">Cargando categorías…</option></select>
 
-        <label class="form-label" for="pcCitaServicio">Servicio</label>
-        <select class="form-select" id="pcCitaServicio" required></select>
-        <div class="invalid-feedback">Elige el servicio que necesitas.</div>
+        <label class="form-label" for="pcCitaServicio">Servicio <span class="pc-meta">(opcional)</span></label>
+        <select class="form-select" id="pcCitaServicio"><option value="">Cargando servicios…</option></select>
+        <p class="pc-meta mt-2 mb-0">Si no estás seguro, déjalo sin elegir: la clínica determinará los servicios que necesita tu mascota.</p>
         <p class="pc-meta mt-2 mb-0 d-none" id="pcCitaCosto"></p>
       </div>
 

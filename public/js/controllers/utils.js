@@ -57,8 +57,9 @@ export function iniciarCerrarSesion() {
   document.querySelectorAll("[data-pc-salir]").forEach(function (boton) {
     boton.addEventListener("click", function (evento) {
       evento.preventDefault();
-      cerrarSesion().then(function () {
-        window.location.href = "login.html";
+      // finally: aunque algo falle en el cierre, igual se sale al login (la marca local ya quedó puesta)
+      cerrarSesion().catch(function () {}).then(function () {
+        window.location.replace("login.html");
       });
     });
   });

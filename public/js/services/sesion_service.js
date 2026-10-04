@@ -16,6 +16,24 @@
    ========================================================================== */
 const API_URL_PROPIETARIOS = "https://petcore-8afada45fabc.herokuapp.com/api/propietarios";
 
+/* Marca de "cerré sesión en este dispositivo". En iOS (WKWebView + CapacitorHttp) la cookie httpOnly de sesión
+   a veces NO se borra con el Set-Cookie de /api/auth/logout; sin esta marca, login.html volvía a verla válida y
+   mandaba directo al dashboard, y "Cerrar sesión" parecía no hacer nada. Mientras la marca exista, la app trata
+   la sesión como cerrada aunque la cookie siga ahí. Se borra solo al iniciar sesión de nuevo. */
+const CLAVE_CIERRE_SESION = "pc_cierre_sesion";
+
+export function marcarCierreDeSesion() {
+  try { localStorage.setItem(CLAVE_CIERRE_SESION, "1"); } catch (e) { /* sin storage: queda el cierre en servidor */ }
+}
+
+export function limpiarMarcaCierreDeSesion() {
+  try { localStorage.removeItem(CLAVE_CIERRE_SESION); } catch (e) { /* ignorar */ }
+}
+
+export function cierreDeSesionMarcado() {
+  try { return localStorage.getItem(CLAVE_CIERRE_SESION) === "1"; } catch (e) { return false; }
+}
+
 // Mismo truco que fetch_con_credenciales.js, pero para XHR (que no pasa
 // por window.fetch): si la página se sirve desde 127.0.0.1 (Live Server)
 // en vez de localhost, hay que apuntar el XHR ahí también -- si no,
