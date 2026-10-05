@@ -48,6 +48,17 @@
   border-radius: 15px;
 }
 
+/* El toast sale arriba: en iPhone con notch / isla dinámica y en Android con recorte quedaba DEBAJO del notch
+   (cortado/tapado). El contenedor de SweetAlert respeta las zonas seguras del dispositivo (viewport-fit=cover
+   ya está en las páginas). El margen extra evita que quede pegado al borde. */
+.swal2-container.swal2-top-end,
+.swal2-container.swal2-top,
+.swal2-container.swal2-top-start{
+  padding-top: calc(env(safe-area-inset-top, 0px) + .75rem) !important;
+  padding-right: calc(env(safe-area-inset-right, 0px) + .625em) !important;
+  padding-left: calc(env(safe-area-inset-left, 0px) + .625em) !important;
+}
+
 :root[data-theme="dark"] .colored-toast {
   background-color: #1e2733 !important;
   color: #e9ecef !important;
