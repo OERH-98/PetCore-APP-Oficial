@@ -352,7 +352,11 @@ export function crearFechaPersonalizada(input, opciones = {}) {
   });
 
   function abrirEnVistaDias() {
-    mesVisible = fechaDesdeISO(input.value) || new Date();
+    // Sin valor, abre en hoy; pero si el máximo ya quedó atrás (ej. fecha de nacimiento: hace 18 años) abre ahí,
+    // porque en el mes actual todos los días estarían deshabilitados.
+    const { max } = limites();
+    const hoyReal = new Date();
+    mesVisible = fechaDesdeISO(input.value) || (max && max < hoyReal ? max : hoyReal);
     vista = "dias";
     abrir(renderizar);
   }

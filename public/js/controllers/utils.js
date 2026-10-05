@@ -16,6 +16,7 @@ export * from "../utils/notificaciones_utils.js";
 export * from "../utils/alertas_utils.js";
 export * from "../utils/html_utils.js";
 export * from "../utils/navegacion_atras.js";
+export * from "../utils/cumpleanios_utils.js";
 
 import { cerrarSesion, obtenerSesion } from "../utils/sesion_utils.js";
 import { aplicarFondoInstitucional, refrescarFondoInstitucional } from "../utils/apariencia_utils.js";

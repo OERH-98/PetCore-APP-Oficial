@@ -17,6 +17,7 @@
 import { obtenerPropietarioPorId, actualizarParcialPropietario, actualizarPropietario, desvincularGooglePropietario } from "../services/propietarios_service.js";
 import { esAppNativa, obtenerIdTokenGoogleNativo } from "../services/login_service.js";
 import { iniciarLayout, requerirSesion, guardarSesion, obtenerSesion, quitarEsqueleto, mostrarToast } from "./utils.js";
+import { crearFechaPersonalizada } from "../utils/fecha_hora_personalizada.js";
 
 let propietarioOriginal = null;
 let fotoSeleccionada = null;
@@ -28,6 +29,7 @@ async function cargarDatosActuales(sesion) {
     correo: document.getElementById("pcEditCorreo"),
     telefono: document.getElementById("pcEditTelefono"),
     dui: document.getElementById("pcEditDui"),
+    fechaNac: document.getElementById("pcEditFechaNac"),
     direccion: document.getElementById("pcEditDireccion")
   };
   const retrato = document.getElementById("pcEditFotoRetrato");
@@ -54,8 +56,16 @@ async function cargarDatosActuales(sesion) {
   campos.correo.value = propietario.pro_correo || "";
   campos.telefono.value = propietario.pro_telefono_movil || "";
   campos.dui.value = propietario.pro_dui || "";
+  // Solo se puede elegir hasta hace 18 años (la API exige mayoría de edad); la fecha viene como yyyy-MM-dd
+  const hoyMenos18 = new Date();
+  hoyMenos18.setFullYear(hoyMenos18.getFullYear() - 18);
+  campos.fechaNac.max = hoyMenos18.getFullYear() + "-" + String(hoyMenos18.getMonth() + 1).padStart(2, "0") + "-" + String(hoyMenos18.getDate()).padStart(2, "0");
+  campos.fechaNac.value = propietario.pro_fecha_nac ? String(propietario.pro_fecha_nac).slice(0, 10) : "";
   campos.direccion.value = propietario.pro_lugar_residencia || "";
   Object.values(campos).forEach(quitarEsqueleto);
+  // Calendario propio de la app (no el genérico del sistema). Va DESPUÉS de quitar el esqueleto: el botón visual
+  // hereda las clases del input y, si no, nacería con el esqueleto puesto.
+  crearFechaPersonalizada(campos.fechaNac, { placeholder: "Elige tu fecha de nacimiento" });
 
   // El correo solo se bloquea cuando la cuenta ya está vinculada con
   // Google (pro_google_vinculado) -- alguien con acceso solo por
@@ -275,7 +285,9 @@ function iniciarFormulario(sesion) {
       // exacto ("00000000-0"), así que un "" ahí rompería la validación en
       // vez de tratarse como "no tengo DUI todavía".
       pro_dui: document.getElementById("pcEditDui").value.trim() || null,
-      pro_lugar_residencia: document.getElementById("pcEditDireccion").value.trim()
+      pro_lugar_residencia: document.getElementById("pcEditDireccion").value.trim(),
+      // Solo se manda si hay fecha (yyyy-MM-dd); la API valida que sea mayor de edad
+      ...(document.getElementById("pcEditFechaNac").value ? { pro_fecha_nac: document.getElementById("pcEditFechaNac").value } : {})
     };
 
     // Con foto nueva hace falta el PUT completo (multipart) para no perder

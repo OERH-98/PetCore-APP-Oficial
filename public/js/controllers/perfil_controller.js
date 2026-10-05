@@ -75,6 +75,7 @@ async function iniciarPerfil() {
     { etiqueta: "Correo", valor: propietario.pro_correo, icono: "fa-envelope" },
     { etiqueta: "Teléfono móvil", valor: propietario.pro_telefono_movil, icono: "fa-mobile-screen" },
     { etiqueta: "DUI", valor: propietario.pro_dui || "No registrado", icono: "fa-id-card" },
+    { etiqueta: "Fecha de nacimiento", valor: propietario.pro_fecha_nac ? fechaLarga(soloFecha(propietario.pro_fecha_nac)) : "No registrada", icono: "fa-cake-candles" },
     { etiqueta: "Dirección", valor: propietario.pro_lugar_residencia, icono: "fa-location-dot" },
     { etiqueta: "Cliente desde", valor: fechaLarga(soloFecha(propietario.pro_fecha_registro)), icono: "fa-calendar-check" }
   ];

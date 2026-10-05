@@ -121,14 +121,30 @@ async function iniciarNuevaCita() {
   personalizadoCategoria?.establecerCargando(true, "Cargando categorías…");
   personalizadoServicio?.establecerCargando(true, "Cargando servicios…");
 
-  const sesion = await requerirSesion();
-  if (!sesion) return;
-
   let mascotas = [];
   let servicios = [];
   let empleados = [];
   let citas = [];
   let feriados = [];
+
+  // Fecha mínima (hoy) y ventana de citas que hace falta conocer para la disponibilidad: de hoy a +180 días.
+  const hoy = new Date();
+  const aISO = function (f) {
+    return f.getFullYear() + "-" + String(f.getMonth() + 1).padStart(2, "0") + "-" + String(f.getDate()).padStart(2, "0");
+  };
+  const isoHoy = aISO(hoy);
+  const limiteVentana = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 180);
+
+  // ANTES todo iba en cascada (sesión -> mascotas/servicios/empleados -> citas -> feriados) y cada select esperaba
+  // a TODO lo anterior: con ~50 ms por viaje y el servidor despertando, eran 5 viajes seguidos. Ahora lo que no
+  // depende del propietario (servicios, veterinarios, citas, feriados) sale YA, en paralelo con la verificación
+  // de sesión, y cada select se pinta en cuanto llega SU dato (no el de los demás).
+  const pServicios = obtenerServiciosActivos();
+  const pEmpleados = obtenerEmpleados();
+  const pCitas = obtenerCitasPorRango(isoHoy, aISO(limiteVentana));
+  const pFeriados = obtenerDiasFeriados();
+  // Se atan handlers de inmediato para que un rechazo temprano no quede sin atender mientras se espera la sesión.
+  [pServicios, pEmpleados, pCitas, pFeriados].forEach(function (p) { p.catch(function () {}); });
 
   // Se recalcula solo cuando cambia la fecha elegida (no en cada botón del
   // popup) -- empleados/citas se leen del cierre, así que ya reflejan los
@@ -150,79 +166,86 @@ async function iniciarNuevaCita() {
     placeholder: "Elige una fecha",
     estaDeshabilitada: function (fechaISO) { return esFechaFeriado(feriados, fechaISO); }
   });
-  // Fecha mínima (hoy) y ventana de citas que hace falta conocer para la disponibilidad: de hoy a +180 días.
-  const hoy = new Date();
-  const aISO = function (f) {
-    return f.getFullYear() + "-" + String(f.getMonth() + 1).padStart(2, "0") + "-" + String(f.getDate()).padStart(2, "0");
-  };
-  const isoHoy = aISO(hoy);
-  const limiteVentana = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 180);
+  // El botón espera a la disponibilidad (veterinarios + citas): sin eso asignarVeterinario() no tendría con qué decidir.
+  boton.disabled = true;
 
-  try {
-    [mascotas, servicios, empleados] = await Promise.all([
-      obtenerMascotasPorPropietario(sesion.pro_id),
-      obtenerServiciosActivos(),
-      obtenerEmpleados()
-    ]);
-    mascotas = mascotas || [];
-    servicios = servicios || [];
-    empleados = empleados || [];
-  } catch (e) {
+  const sesion = await requerirSesion();
+  if (!sesion) return;
+
+  // Mascotas: lo único que necesita el id del propietario; arranca apenas hay sesión, sin esperar al resto.
+  const pMascotas = obtenerMascotasPorPropietario(sesion.pro_id);
+  pMascotas.catch(function () {});
+
+  function pintarMascotas() {
+    if (!mascotas.length) {
+      selMascota.innerHTML = '<option value="" selected disabled>Aún no tienes mascotas registradas</option>';
+      personalizadoMascota?.refrescar();
+      return;
+    }
+    selMascota.innerHTML = '<option value="" selected disabled>Elige una mascota</option>' +
+      mascotas.map(function (m) {
+        return '<option value="' + m.mas_id + '">' + escaparHtml(m.mas_nombre) + (m.nombreRaza ? " · " + escaparHtml(m.nombreRaza) : "") + "</option>";
+      }).join("");
+    personalizadoMascota?.refrescar();
+  }
+
+  const listoMascotas = pMascotas.then(function (lista) {
+    mascotas = lista || [];
+    pintarMascotas();
+  }).catch(function (e) {
+    console.error("No se pudieron cargar las mascotas:", e);
     selMascota.innerHTML = '<option value="" selected disabled>No se pudo cargar la información</option>';
+    personalizadoMascota?.refrescar();
+  });
+
+  const listoServicios = pServicios.then(function (lista) {
+    servicios = lista || [];
+    pintarCategoriasYServicios();
+  }).catch(function (e) {
+    console.error("No se pudieron cargar los servicios:", e);
     selServicio.innerHTML = '<option value="" selected disabled>No se pudo cargar la información</option>';
-    personalizadoMascota?.refrescar();
     personalizadoCategoria?.refrescar();
     personalizadoServicio?.refrescar();
-    boton.disabled = true;
-    return;
-  }
+  });
 
-  // Las citas existentes SOLO sirven para atenuar horarios ocupados y elegir un veterinario libre: antes se pedía
-  // TODA la tabla de citas de la clínica (GET /api/citas), que con el servidor ocupado respondía 503 y tumbaba el
-  // formulario completo. Ahora se pide solo la ventana próxima (/api/citas/rango) y, si falla, el formulario sigue
-  // funcionando: el backend valida disponibilidad de todas formas al agendar.
-  try {
-    citas = (await obtenerCitasPorRango(isoHoy, aISO(limiteVentana))) || [];
-  } catch (e) {
-    console.warn("No se pudo consultar la disponibilidad de horarios:", e);
-    citas = [];
-    mostrarToast("warning", "No se pudo verificar la disponibilidad de horarios; el servidor la confirmará al agendar.");
-  }
+  const listoDisponibilidad = Promise.all([
+    pEmpleados.then(function (lista) { empleados = lista || []; }),
+    // Las citas solo sirven para atenuar horarios ocupados y elegir un veterinario libre; si fallan, el formulario
+    // sigue (el backend valida la disponibilidad al agendar).
+    pCitas.then(function (lista) { citas = lista || []; }).catch(function (e) {
+      console.warn("No se pudo consultar la disponibilidad de horarios:", e);
+      citas = [];
+      mostrarToast("warning", "No se pudo verificar la disponibilidad de horarios; el servidor la confirmará al agendar.");
+    })
+  ]).then(function () {
+    cacheHorasOcupadas = { fecha: null, set: new Set() }; // recalcula con los datos recién llegados
+  });
 
-  // Aparte del Promise.all de arriba: no es crítico para poder agendar --
-  // si falla, simplemente no se deshabilita ningún día en el calendario y
-  // el backend igual rechaza un feriado al enviar el formulario.
-  try {
-    feriados = (await obtenerDiasFeriados()) || [];
-  } catch (e) {
+  // No es crítico: si falla simplemente no se deshabilita ningún feriado (el backend igual lo rechaza).
+  pFeriados.then(function (lista) { feriados = lista || []; }).catch(function (e) {
     console.warn("No se pudieron cargar los días feriados:", e);
-  }
+  });
 
-  if (!mascotas.length) {
-    selMascota.innerHTML = '<option value="" selected disabled>Aún no tienes mascotas registradas</option>';
-    personalizadoMascota?.refrescar();
-    personalizadoCategoria?.refrescar();
-    personalizadoServicio?.refrescar();
+  // Habilita "Agendar" solo cuando se puede decidir: mascotas con datos y veterinarios cargados.
+  Promise.all([listoMascotas, listoServicios, listoDisponibilidad]).then(function () {
+    boton.disabled = !mascotas.length;
+  }).catch(function () {
     boton.disabled = true;
-    return;
-  }
-
-  selMascota.innerHTML = '<option value="" selected disabled>Elige una mascota</option>' +
-    mascotas.map(function (m) {
-      return '<option value="' + m.mas_id + '">' + escaparHtml(m.mas_nombre) + (m.nombreRaza ? " · " + escaparHtml(m.nombreRaza) : "") + "</option>";
-    }).join("");
-  personalizadoMascota?.refrescar();
+  });
 
   // --- Filtro de servicios por categoría (ser_categoria) ---
-  const categoriasPresentes = servicios
-    .map(function (s) { return s.ser_categoria; })
-    .filter(function (c, i, arr) { return c && arr.indexOf(c) === i; });
+  function pintarCategoriasYServicios() {
+    const categoriasPresentes = servicios
+      .map(function (s) { return s.ser_categoria; })
+      .filter(function (c, i, arr) { return c && arr.indexOf(c) === i; });
 
-  selCategoria.innerHTML = '<option value="">Todas las categorías</option>' +
-    categoriasPresentes.map(function (c) {
-      return '<option value="' + c + '">' + escaparHtml(CATEGORIA_ETIQUETA[c] || c) + "</option>";
-    }).join("");
-  personalizadoCategoria?.refrescar();
+    selCategoria.innerHTML = '<option value="">Todas las categorías</option>' +
+      categoriasPresentes.map(function (c) {
+        return '<option value="' + c + '">' + escaparHtml(CATEGORIA_ETIQUETA[c] || c) + "</option>";
+      }).join("");
+    personalizadoCategoria?.refrescar();
+    repintarServicios();
+  }
 
   function repintarServicios() {
     const categoriaActiva = selCategoria.value;
@@ -252,8 +275,6 @@ async function iniciarNuevaCita() {
   }
 
   selCategoria.addEventListener("change", repintarServicios);
-
-  repintarServicios();
 
   // La cita no puede quedar en el pasado
   fecha.min = isoHoy;

@@ -79,7 +79,8 @@ export async function obtenerSesionVerificada() {
     pro_apellido: propietario?.pro_apellido || "",
     nombre: propietario ? `${propietario.pro_nombre || ""} ${propietario.pro_apellido || ""}`.trim() : (verificacion.nombreUsuario || "Usuario"),
     correo: verificacion.correo,
-    pro_foto_url: propietario?.pro_foto_url || null
+    pro_foto_url: propietario?.pro_foto_url || null,
+    pro_fecha_nac: propietario?.pro_fecha_nac || null
   };
 
   guardarSesion(sesion);

@@ -10,7 +10,7 @@ import { obtenerPropietarioPorId } from "../services/propietarios_service.js";
 import {
   iniciarLayout, requerirSesion, esFutura, aFecha, badge, bloqueFecha,
   retrato, soloFecha, nombreEmpleado, error as vacioError, quitarEsqueleto,
-  escaparHtml
+  escaparHtml, felicitarCumpleanios
 } from "./utils.js";
 import { activarPushNativo, iniciarAperturaDeNotificacionesPush } from "../utils/push_fcm_utils.js";
 
@@ -113,6 +113,14 @@ async function iniciarDashboard() {
         '<a class="btn btn-primary w-100" href="nueva_cita.html">Agendar una cita</a>';
     }
   }
+
+  // --- Cumpleaños: del propietario y de sus mascotas (una vez por día) ---
+  felicitarCumpleanios({
+    proId: sesion.pro_id,
+    nombre: sesion.pro_nombre || sesion.nombre,
+    fechaNac: sesion.pro_fecha_nac,
+    mascotas: mascotas
+  }).catch(function () { /* la felicitación nunca debe romper el inicio */ });
 
   // --- Carrusel de mascotas ---
   carrusel.innerHTML = mascotas.length

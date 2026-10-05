@@ -5,7 +5,7 @@
    Servicios usados: mascotas_service.js, citas_service.js,
    cartillas_service.js (vacunas), historiales_tratamientos_service.js
    ========================================================================== */
-import { obtenerMascotasPorPropietario } from "../services/mascotas_service.js";
+import { obtenerMascotasPorPropietario, actualizarFotoMascota } from "../services/mascotas_service.js";
 import { obtenerCitasPorMascota } from "../services/citas_service.js";
 import { obtenerCartillasPorMascota } from "../services/cartillas_service.js";
 import { obtenerAntiparasitariosPorMascota } from "../services/antiparasitarios_service.js";
@@ -95,6 +95,51 @@ function renderizarCuidados(contenedor, datos) {
   contenedor.innerHTML = htmlResult;
 }
 
+/* Cambiar la foto de la mascota: el botón de cámara abre la galería/cámara y sube la imagen elegida. */
+function iniciarCambioFotoMascota(mascota) {
+  const boton = document.getElementById("pcBtnFotoMascota");
+  const input = document.getElementById("pcInputFotoMascota");
+  if (!boton || !input) return;
+
+  const TAMANO_MAXIMO = 10 * 1024 * 1024; // 10 MB (mismo límite que la API)
+
+  boton.addEventListener("click", function () { input.click(); });
+
+  input.addEventListener("change", async function () {
+    const archivo = input.files && input.files[0];
+    input.value = ""; // permite volver a elegir la misma imagen
+    if (!archivo) return;
+
+    if (!archivo.type.startsWith("image/")) {
+      alertar({ icon: "warning", title: "Archivo no válido", text: "Elige una imagen (JPG, PNG...)." });
+      return;
+    }
+    if (archivo.size > TAMANO_MAXIMO) {
+      alertar({ icon: "warning", title: "Imagen muy pesada", text: "La foto no puede pesar más de 10 MB." });
+      return;
+    }
+
+    const original = boton.innerHTML;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    try {
+      const actualizada = await actualizarFotoMascota(mascota.mas_id, archivo);
+      const nuevaUrl = (actualizada && actualizada.mas_foto_url) || null;
+      if (nuevaUrl) {
+        mascota.mas_foto_url = nuevaUrl;
+        const img = document.querySelector("#pcCarnet .pc-retrato img");
+        if (img) img.src = nuevaUrl;
+      }
+      alertar({ icon: "success", title: "Foto actualizada", text: "Ya se ve la nueva foto de " + mascota.mas_nombre + "." });
+    } catch (e) {
+      alertar({ icon: "error", title: "No se pudo cambiar la foto", text: (e && e.message) || "Intenta de nuevo." });
+    } finally {
+      boton.disabled = false;
+      boton.innerHTML = original;
+    }
+  });
+}
+
 /* Botón "Descargar cartilla digital": junta las vacunas ya cargadas (o las vuelve a pedir si fallaron) y los
    antiparasitarios, y guarda el PDF en el teléfono. */
 function iniciarDescargaCartilla(mascota, sesion, vacunasCargadas) {
@@ -166,7 +211,12 @@ async function iniciarDetalle() {
 
   carnet.innerHTML =
     '<div class="d-flex flex-column align-items-center">' +
-      retrato(m, "pc-retrato-xl") +
+      '<div class="position-relative d-inline-block">' +
+        retrato(m, "pc-retrato-xl") +
+        '<button type="button" class="pc-foto-btn-cambiar" id="pcBtnFotoMascota" aria-label="Cambiar foto de ' + escaparHtml(m.mas_nombre) + '" title="Cambiar foto">' +
+          '<i class="fa-solid fa-camera"></i></button>' +
+        '<input type="file" accept="image/*" class="d-none" id="pcInputFotoMascota">' +
+      "</div>" +
       '<span class="pc-eyebrow d-block mt-3">' + escaparHtml(m.nombreEspecie || "Especie no indicada") + " · " + escaparHtml(m.nombreRaza || "Raza no indicada") + "</span>" +
       '<h1 class="h3 mt-1 mb-2">' + escaparHtml(m.mas_nombre) + "</h1>" +
       badge(m.mas_estado) +
@@ -176,6 +226,8 @@ async function iniciarDetalle() {
       '<div><dt>Peso</dt><dd class="pc-dato">' + (m.mas_peso_kg != null ? escaparHtml(m.mas_peso_kg + " kg") : "No registrado") + "</dd></div>" +
       "<div><dt>Sexo</dt><dd>" + escaparHtml(m.mas_genero || "No indicado") + "</dd></div>" +
     "</dl>";
+
+  iniciarCambioFotoMascota(m);
 
   const [citas, cartillas, expedientes] = await Promise.allSettled([
     obtenerCitasPorMascota(m.mas_id),

@@ -6,6 +6,7 @@
    oscuro/sistema y la imagen institucional de fondo.
    ========================================================================== */
 import { obtenerSesion } from "./sesion_utils.js";
+import { obtenerSrcImagenCacheada } from "../services/fondo_cache_service.js";
 
 /* ------------------------------------------------------------------------
    TEMA
@@ -103,10 +104,15 @@ export function iniciarSelectorTema(selector, clave) {
    institucional" apagado, no se toca nada.
    ------------------------------------------------------------------------ */
 const CLAVE_CACHE_CFG_SISTEMA = "pc_cfg_sistema_cache";
+const CLAVE_CFG_REVISADA = "pc_cfg_sistema_revisada";
+// Con la configuración ya guardada se pinta al instante y solo se vuelve a preguntar al servidor cada tanto
+// (los cambios en vivo del admin llegan igual por WebSocket -> refrescarFondoInstitucional).
+const VIGENCIA_REVISION_MS = 10 * 60 * 1000;
 
-/* Solo lo que pinta el fondo institucional es lo único que se deja en
-   sessionStorage; el resto de la configuración (ej. sis_id_emp, el
-   empleado que la guardó) nunca se cachea. */
+/* Solo lo que pinta el fondo institucional se guarda en el dispositivo; el
+   resto de la configuración (ej. sis_id_emp, el empleado que la guardó)
+   nunca se cachea. localStorage (no sessionStorage): sobrevive al cierre de
+   la app, que es justo lo que evita recargar el fondo en cada arranque. */
 function soloCamposVisuales(config) {
   return {
     sis_img_fondo_url: config.sis_img_fondo_url ?? null,
@@ -114,22 +120,33 @@ function soloCamposVisuales(config) {
   };
 }
 
-async function obtenerConfiguracionSistemaActual() {
-  const cacheado = window.sessionStorage.getItem(CLAVE_CACHE_CFG_SISTEMA);
-  if (cacheado) {
-    try {
-      const visual = soloCamposVisuales(JSON.parse(cacheado));
-      // Reescribe: pisa cualquier caché viejo con la configuración completa.
-      window.sessionStorage.setItem(CLAVE_CACHE_CFG_SISTEMA, JSON.stringify(visual));
-      return visual;
-    } catch (e) { /* caché corrupto, se reintenta abajo */ }
-  }
+function leerConfigCacheada() {
+  try {
+    const texto = window.localStorage.getItem(CLAVE_CACHE_CFG_SISTEMA);
+    return texto ? soloCamposVisuales(JSON.parse(texto)) : null;
+  } catch (e) { return null; }
+}
+
+function guardarConfigCacheada(visual) {
+  try {
+    window.localStorage.setItem(CLAVE_CACHE_CFG_SISTEMA, JSON.stringify(visual));
+    window.localStorage.setItem(CLAVE_CFG_REVISADA, String(Date.now()));
+  } catch (e) { /* sin almacenamiento: se pedirá de nuevo */ }
+}
+
+function revisionVencida() {
+  try {
+    return Date.now() - Number(window.localStorage.getItem(CLAVE_CFG_REVISADA) || 0) > VIGENCIA_REVISION_MS;
+  } catch (e) { return true; }
+}
+
+async function obtenerConfiguracionRemota() {
   try {
     const { obtenerConfiguracionActual } = await import("../services/config_sistema_service.js");
     const actual = await obtenerConfiguracionActual();
     if (!actual) return null;
     const visual = soloCamposVisuales(actual);
-    window.sessionStorage.setItem(CLAVE_CACHE_CFG_SISTEMA, JSON.stringify(visual));
+    guardarConfigCacheada(visual);
     return visual;
   } catch (e) {
     console.warn("No se pudo obtener la configuración del sistema:", e);
@@ -146,22 +163,44 @@ export function aplicarOpacidadFondoInstitucional(proId) {
   document.documentElement.style.setProperty("--pc-institucional-overlay-alpha", String(alpha));
 }
 
-export async function aplicarFondoInstitucional() {
-  const sesion = await obtenerSesion();
-  if (!sesion || !sesion.pro_id) return;
+// Evita repintar (y releer la imagen guardada) si nada cambió respecto a lo ya aplicado en esta página.
+let firmaPintada = null;
 
-  const config = await obtenerConfiguracionSistemaActual();
-  if (!config) return;
+async function pintarFondo(config, proId) {
+  const firma = JSON.stringify(config) + "|" + proId;
+  if (firma === firmaPintada) return;
+  firmaPintada = firma;
 
   const hayFondoActivo = config.sis_img_fondo_url && Number(config.sis_mostrar_imagen_sistema) === 1;
   if (hayFondoActivo) {
-    document.documentElement.style.setProperty("--pc-institucional-imagen", `url("${config.sis_img_fondo_url}")`);
+    // Desde el almacenamiento del dispositivo si ya está guardada (ver fondo_cache_service.js)
+    const src = await obtenerSrcImagenCacheada(config.sis_img_fondo_url);
+    document.documentElement.style.setProperty("--pc-institucional-imagen", `url("${src}")`);
     document.body.classList.add("pc-fondo-institucional-activo");
-    aplicarOpacidadFondoInstitucional(sesion.pro_id);
+    aplicarOpacidadFondoInstitucional(proId);
   } else {
     document.body.classList.remove("pc-fondo-institucional-activo");
     document.documentElement.style.removeProperty("--pc-institucional-imagen");
   }
+}
+
+export async function aplicarFondoInstitucional() {
+  let config = leerConfigCacheada();
+
+  // Primer pintado inmediato: con la configuración guardada y el último propietario conocido (el mismo dato que ya
+  // usa tema_temprano.js) no hace falta esperar a verificar la sesión contra el servidor para mostrar el fondo.
+  let proIdConocido = null;
+  try { proIdConocido = window.localStorage.getItem("pc_ultimo_pro_id"); } catch (e) { /* sin localStorage */ }
+  if (config && proIdConocido) await pintarFondo(config, proIdConocido);
+
+  const sesion = await obtenerSesion();
+  if (!sesion || !sesion.pro_id) return;
+
+  if (!config || revisionVencida()) {
+    const remota = await obtenerConfiguracionRemota();
+    if (remota) config = remota;
+  }
+  if (config) await pintarFondo(config, sesion.pro_id);
 }
 
 /* Se llama al recibir "CONFIG_SISTEMA_ACTUALIZADA" por WebSocket (ver
@@ -175,9 +214,9 @@ export async function aplicarFondoInstitucional() {
    directo con eso, sin otro viaje de red. */
 export function refrescarFondoInstitucional(configNuevo) {
   if (configNuevo) {
-    window.sessionStorage.setItem(CLAVE_CACHE_CFG_SISTEMA, JSON.stringify(soloCamposVisuales(configNuevo)));
+    guardarConfigCacheada(soloCamposVisuales(configNuevo));
   } else {
-    window.sessionStorage.removeItem(CLAVE_CACHE_CFG_SISTEMA);
+    try { window.localStorage.removeItem(CLAVE_CACHE_CFG_SISTEMA); window.localStorage.removeItem(CLAVE_CFG_REVISADA); } catch (e) { /* nada */ }
   }
   return aplicarFondoInstitucional();
 }
