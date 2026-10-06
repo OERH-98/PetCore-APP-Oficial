@@ -40,22 +40,50 @@
   // estilo fijo que capacitor.config.json deja como valor inicial, en modo
   // claro los íconos (batería, señal) quedaban blancos sobre fondo blanco --
   // invisibles.
+  // Altura real de la barra de estado -> --pc-barra-estado (ver variables_style.css). Solo hace falta en Android viejo,
+  // donde env(safe-area-inset-top) vale 0 y el header quedaba bajo la barra de estado.
+  function fijarAlturaBarra(StatusBar) {
+    try {
+      StatusBar.getInfo().then(function (info) {
+        if (info && info.height > 0) document.documentElement.style.setProperty("--pc-barra-estado", info.height + "px");
+      }).catch(function () {});
+    } catch (e) { /* no-op */ }
+  }
+
   function aplicarEstiloBarraDeEstado(oscuro) {
     try {
-      // Android viejo (comprobado en un Samsung J7 Prime, Android 8): las
-      // llamadas al plugin StatusBar ahí NO arreglan nada -- rompen el color
-      // fijo correcto que ya deja puesto el tema nativo estático (ver
-      // android:statusBarColor/windowLightStatusBar en styles.xml). Login/
-      // index no siguen el tema en Android viejo por esto mismo: se quedan
-      // con el azul institucional fijo, que es peor que "perfecto" pero
-      // mucho mejor que roto/blanco.
-      var version = Number((navigator.userAgent.match(/Android\s+(\d+)/) || [])[1]);
-      if (version && version < 12) return;
-
       if (!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) return;
       var StatusBar = (window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar)
         || (window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("StatusBar"));
       if (!StatusBar) return;
+
+      // Android viejo (probado en un Samsung J7 Prime, Android 8.1): sin edge-to-edge (nunca overlay=true) y la barra
+      // con el color del fondo de login/index según el tema, con íconos que contrasten (oscuros sobre claro, claros
+      // sobre oscuro). Antes aquí no se hacía nada y la barra quedaba con el color por defecto del plugin.
+      var version = Number((navigator.userAgent.match(/Android\s+(\d+)/) || [])[1]);
+      if (version && version < 12) {
+        StatusBar.setOverlaysWebView({ overlay: true });
+        var colorBarra = oscuro ? "#10141B" : "#F4F6FA";
+        StatusBar.setBackgroundColor({ color: colorBarra });
+        StatusBar.setStyle({ style: oscuro ? "DARK" : "LIGHT" });
+        // Plugin nativo propio (FondoVentanaPlugin.java): pinta el fondo de la ventana, que es lo que se ve en la
+        // franja de la barra de estado en Android viejo (ver tema_temprano.js).
+        var FondoVentana = (window.Capacitor.Plugins && window.Capacitor.Plugins.FondoVentana)
+          || (window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("FondoVentana"));
+        if (FondoVentana) {
+          FondoVentana.setColor({ color: colorBarra }).catch(function () { /* app sin el plugin nativo */ });
+          // Segunda pasada cuando la página ya terminó de cargar: en Android 8.1 SystemBars decide el layout (franja
+          // reservada arriba vs. pantalla completa) antes de saber que la página declara viewport-fit=cover y se queda
+          // con la franja blanca; volver a pintar el fondo de la ventana ya con la página lista provoca el recálculo
+          // correcto (comprobado en el J7 Prime: el WebView pasa de y=48 a y=0 y el header queda bajo la barra).
+          var repetir = function () { setTimeout(function () { FondoVentana.setColor({ color: colorBarra }).catch(function () {}); }, 350); };
+          if (document.readyState === "complete") repetir(); else window.addEventListener("load", repetir);
+        }
+        fijarAlturaBarra(StatusBar);
+        setTimeout(function () { fijarAlturaBarra(StatusBar); }, 400);
+        setTimeout(function () { fijarAlturaBarra(StatusBar); }, 1500);
+        return;
+      }
 
       // overlaysWebView arranca en false (capacitor.config.json) para que
       // Android viejo nunca lo toque -- acá, en dispositivos modernos, se

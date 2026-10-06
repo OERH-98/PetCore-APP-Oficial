@@ -12,8 +12,8 @@
    de dejar una franja transparente/negra sobre el header. */
 .pc-header{
   position: fixed; inset: 0 0 auto 0; z-index: 1030;
-  height: calc(var(--pc-header-alto) + env(safe-area-inset-top, 0px));
-  padding-top: env(safe-area-inset-top, 0px);
+  height: calc(var(--pc-header-alto) + var(--pc-area-segura-arriba));
+  padding-top: var(--pc-area-segura-arriba);
   background: var(--pc-azul);
   box-shadow: 0 2px 12px rgba(28,61,107,.18);
 }
@@ -61,7 +61,7 @@
    detrás de la barra inferior, sin forma de llegar a él). Se escribe
    junto con ".pc-header" (que solo tiene el <header>) para que quede sin
    ambigüedad. */
-.pc-header.pc-header--apilado{ height: calc(var(--pc-header-alto-logo) + env(safe-area-inset-top, 0px)); }
+.pc-header.pc-header--apilado{ height: calc(var(--pc-header-alto-logo) + var(--pc-area-segura-arriba)); }
 .pc-header--apilado .pc-header-inner{
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -75,11 +75,11 @@
   font-weight: 600;
   opacity: .9;
 }
-body.pc-con-header.pc-header--apilado{ padding-top: calc(var(--pc-header-alto-logo) + env(safe-area-inset-top, 0px)); }
+body.pc-con-header.pc-header--apilado{ padding-top: calc(var(--pc-header-alto-logo) + var(--pc-area-segura-arriba)); }
 
 /* Compensación de la altura del header (ya crecida por el notch, ver arriba)
    y de la barra inferior */
-body.pc-con-header{ padding-top: calc(var(--pc-header-alto) + env(safe-area-inset-top, 0px)); }
+body.pc-con-header{ padding-top: calc(var(--pc-header-alto) + var(--pc-area-segura-arriba)); }
 /* !important porque esta clase casi siempre va junto a un "py-4" u otro
    utilitario de espaciado de Bootstrap en el mismo <main> -- y esos
    utilitarios se compilan con !important (para poder pisar cualquier

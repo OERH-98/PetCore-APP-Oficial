@@ -1,0 +1,26 @@
+/* --------------------------------------------------------------------------
+   Deslizar para recargar (ver js/utils/pull_refrescar.js)
+   -------------------------------------------------------------------------- */
+/* Sin el brillo/rebote nativo al llegar arriba: el gesto lo dibuja el indicador de abajo */
+html{ overscroll-behavior-y: contain; }
+
+.pc-ptr{
+  position: fixed; left: 50%; top: 0;
+  width: 40px; height: 40px; margin-left: -20px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--pc-superficie); color: var(--pc-azul);
+  border: 1px solid var(--pc-borde);
+  box-shadow: 0 4px 14px rgba(28,61,107,.22);
+  z-index: 1020;                      /* bajo el header (1030) y los cuadros emergentes */
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(var(--pc-ptr-y, -60px)) scale(.8);
+  transition: opacity .15s ease;
+}
+.pc-ptr i{ font-size: 1rem; transform: rotate(var(--pc-ptr-giro, 0deg)); }
+.pc-ptr--visible{ opacity: 1; transform: translateY(var(--pc-ptr-y, -60px)) scale(1); }
+.pc-ptr--listo{ background: var(--pc-azul); color: #fff; border-color: var(--pc-azul); }
+.pc-ptr--girando i{ animation: pc-ptr-giro 0.8s linear infinite; }
+@keyframes pc-ptr-giro{ to{ transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce){ .pc-ptr--girando i{ animation: none; } }

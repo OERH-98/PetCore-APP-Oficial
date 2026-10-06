@@ -54,7 +54,7 @@
 .swal2-container.swal2-top-end,
 .swal2-container.swal2-top,
 .swal2-container.swal2-top-start{
-  padding-top: calc(env(safe-area-inset-top, 0px) + .75rem) !important;
+  padding-top: calc(var(--pc-area-segura-arriba) + .75rem) !important;
   padding-right: calc(env(safe-area-inset-right, 0px) + .625em) !important;
   padding-left: calc(env(safe-area-inset-left, 0px) + .625em) !important;
 }

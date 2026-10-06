@@ -39,15 +39,6 @@ export function aplicarTema(valor) {
    primer render, una vez por carga de página). */
 function actualizarBarraDeEstadoNativa(esOscuro) {
   try {
-    // Android viejo (comprobado en un Samsung J7 Prime, Android 8): las
-    // llamadas al plugin StatusBar ahí NO arreglan nada -- rompen el color
-    // fijo correcto que ya deja puesto el tema nativo estático (ver
-    // android:statusBarColor/windowLightStatusBar en styles.xml). Ahí no se
-    // toca nada por JS: se queda con el azul institucional fijo siempre,
-    // que es peor que "perfecto" pero mucho mejor que roto/blanco.
-    const version = Number((navigator.userAgent.match(/Android\s+(\d+)/) || [])[1]);
-    if (version && version < 12) return;
-
     if (!window.Capacitor?.isNativePlatform?.()) return;
     const StatusBar = window.Capacitor.Plugins?.StatusBar || window.Capacitor.registerPlugin?.("StatusBar");
     if (!StatusBar) return;
@@ -58,6 +49,21 @@ function actualizarBarraDeEstadoNativa(esOscuro) {
     // --pc-fondo), así que ahí sí siguen el tema.
     const esPantallaConHeaderAzul = document.body.classList.contains("pc-con-header");
     const estiloIconos = (esPantallaConHeaderAzul || esOscuro) ? "DARK" : "LIGHT";
+
+    // Android viejo (Samsung J7 Prime, Android 8.1): sin edge-to-edge. Cada toggle de tema repinta la barra con el
+    // color de lo que hay debajo (header azul, o el fondo en login) y el estilo de íconos que contraste.
+    const version = Number((navigator.userAgent.match(/Android\s+(\d+)/) || [])[1]);
+    if (version && version < 12) {
+      const colorBarra = esPantallaConHeaderAzul ? (esOscuro ? "#5B9BFF" : "#2D60A1") : (esOscuro ? "#10141B" : "#F4F6FA");
+      StatusBar.setOverlaysWebView({ overlay: true });
+      StatusBar.setBackgroundColor({ color: colorBarra });
+      StatusBar.setStyle({ style: estiloIconos });
+      // Plugin nativo propio (FondoVentanaPlugin.java): en Android viejo la franja de la barra muestra el fondo de la
+      // ventana, no el color de StatusBar.setBackgroundColor (ver tema_temprano.js).
+      const FondoVentana = window.Capacitor.Plugins?.FondoVentana || window.Capacitor.registerPlugin?.("FondoVentana");
+      FondoVentana?.setColor({ color: colorBarra }).catch(() => { /* app sin el plugin nativo */ });
+      return;
+    }
 
     // overlaysWebView arranca en false (capacitor.config.json) para que
     // Android viejo nunca lo toque -- acá, en dispositivos modernos, se

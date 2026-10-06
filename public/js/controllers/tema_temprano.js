@@ -57,34 +57,68 @@
   document.documentElement.setAttribute("data-theme", esOscuro ? "dark" : "light");
 
   // A diferencia de login/index (ver tema_temprano_login.js), estas páginas
-  // SIEMPRE tienen el header azul fijo arriba (.pc-header, var(--pc-azul) --
-  // ambos tonos de azul, claro y oscuro, son lo bastante oscuros/saturados
-  // para íconos claros) -- así que acá la barra de estado NO sigue el tema,
-  // se queda fija con íconos claros sin importar claro/oscuro/sistema.
-  try {
-    // Android viejo (comprobado en un Samsung J7 Prime, Android 8): las
-    // llamadas al plugin StatusBar (setOverlaysWebView/setBackgroundColor)
-    // ahí NO arreglan nada -- rompen el color correcto que ya deja puesto el
-    // tema nativo estático (ver android:statusBarColor/windowLightStatusBar
-    // en styles.xml, AppTheme/AppTheme.NoActionBarLaunch, fijo en el mismo
-    // azul institucional). Así que en Android viejo no se toca nada por JS
-    // acá; solo en versiones modernas, donde SÍ hace falta (edge-to-edge
-    // real, notch, etc.).
-    var version = Number((navigator.userAgent.match(/Android\s+(\d+)/) || [])[1]);
-    var esAndroidViejo = version && version < 12;
+  // SIEMPRE tienen el header azul fijo arriba (.pc-header, var(--pc-azul)) --
+  // los íconos de la barra de estado se quedan claros sin importar el tema,
+  // pero el COLOR de la barra sí sigue al header (azul de la marca en claro,
+  // azul brillante en oscuro) para que se vea como una sola pieza.
+  // Plugin nativo propio (FondoVentanaPlugin.java): en Android viejo el color de StatusBar.setBackgroundColor no se
+  // dibuja en la franja que Capacitor 8 reserva arriba -- se ve el fondo de la ventana (blanco). Se pinta ese fondo.
+  function pintarFondoVentana(color) {
+    try {
+      var FondoVentana = (window.Capacitor.Plugins && window.Capacitor.Plugins.FondoVentana)
+        || (window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("FondoVentana"));
+      if (!FondoVentana) return;
+      FondoVentana.setColor({ color: color }).catch(function () { /* app sin el plugin nativo */ });
+      // Segunda pasada cuando la página ya terminó de cargar: en Android 8.1 SystemBars decide el layout (franja
+      // reservada arriba vs. pantalla completa) antes de saber que la página declara viewport-fit=cover y se queda
+      // con la franja blanca; volver a pintar el fondo de la ventana ya con la página lista provoca el recálculo
+      // correcto (comprobado en el J7 Prime: el WebView pasa de y=48 a y=0 y el header queda bajo la barra).
+      var repetir = function () { setTimeout(function () { FondoVentana.setColor({ color: color }).catch(function () {}); }, 350); };
+      if (document.readyState === "complete") repetir(); else window.addEventListener("load", repetir);
+    } catch (e) { /* no-op */ }
+  }
 
-    if (!esAndroidViejo && window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+  // Altura real de la barra de estado -> --pc-barra-estado (ver variables_style.css). Solo hace falta en Android viejo,
+  // donde env(safe-area-inset-top) vale 0 y el header quedaba bajo la barra de estado.
+  function fijarAlturaBarra(StatusBar) {
+    try {
+      StatusBar.getInfo().then(function (info) {
+        if (info && info.height > 0) document.documentElement.style.setProperty("--pc-barra-estado", info.height + "px");
+      }).catch(function () {});
+    } catch (e) { /* no-op */ }
+  }
+
+  function aplicarBarraDeEstado(oscuro) {
+    try {
+      if (!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) return;
       var StatusBar = (window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar)
         || (window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("StatusBar"));
-      if (StatusBar) {
-        // overlaysWebView arranca en false (capacitor.config.json) para que
-        // Android viejo nunca lo toque -- acá, en dispositivos modernos, se
-        // activa el edge-to-edge real (necesario para notch/isla dinámica).
+      if (!StatusBar) return;
+
+      var version = Number((navigator.userAgent.match(/Android\s+(\d+)/) || [])[1]);
+      if (version && version < 12) {
+        // Android viejo (probado en un Samsung J7 Prime, Android 8.1): sin edge-to-edge. NUNCA overlay=true (ahí el
+        // WebView no recibe safe-area y la barra se montaba sobre el header). Se pinta la barra con el MISMO color
+        // del header según el tema y se fija el estilo de íconos. Antes aquí no se tocaba nada y el plugin dejaba la
+        // barra en su color por defecto (negro) en vez de seguir al tema.
         StatusBar.setOverlaysWebView({ overlay: true });
+        var colorBarra = oscuro ? "#5B9BFF" : "#2D60A1";
+        StatusBar.setBackgroundColor({ color: colorBarra });
         StatusBar.setStyle({ style: "DARK" });
+        pintarFondoVentana(colorBarra);
+        fijarAlturaBarra(StatusBar);
+        setTimeout(function () { fijarAlturaBarra(StatusBar); }, 400);
+        setTimeout(function () { fijarAlturaBarra(StatusBar); }, 1500);
+        return;
       }
-    }
-  } catch (e) { /* no-op fuera de la app nativa */ }
+
+      // overlaysWebView arranca en false (capacitor.config.json) -- en dispositivos modernos se activa el
+      // edge-to-edge real (necesario para notch/isla dinámica).
+      StatusBar.setOverlaysWebView({ overlay: true });
+      StatusBar.setStyle({ style: "DARK" });
+    } catch (e) { /* no-op fuera de la app nativa */ }
+  }
+  aplicarBarraDeEstado(esOscuro);
 
   // Tema "sistema": si el usuario cambia el modo claro/oscuro del teléfono con
   // la app abierta, se re-aplica al instante (antes solo se leía al cargar).
@@ -99,6 +133,7 @@
       if (enlace) {
         enlace.href = enlace.href.replace(/tema_(claro|oscuro)\.css(\?.*)?$/, "tema_" + (e.matches ? "oscuro" : "claro") + ".css");
       }
+      aplicarBarraDeEstado(e.matches);
     };
     if (mqTema.addEventListener) mqTema.addEventListener("change", alCambiarSistema);
     else if (mqTema.addListener) mqTema.addListener(alCambiarSistema);

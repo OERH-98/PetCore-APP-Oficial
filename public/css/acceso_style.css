@@ -12,7 +12,7 @@
    bajas (teléfono) el contenido centrado subía hasta pisarlo con el logo.
    Se reserva su alto (32px + padding + margen) arriba de la tarjeta. */
 body:has(.pc-tema-toggle) .pc-acceso{
-  padding-top: calc(4.25rem + env(safe-area-inset-top, 0px));
+  padding-top: calc(4.25rem + var(--pc-area-segura-arriba));
 }
 .pc-logo-acceso{ width:100%; max-width: 190px; height:auto; }
 /* Logo más grande y libre del ancho de la tarjeta, solo en la pantalla de inicio (index.html) */
@@ -65,7 +65,7 @@ body:has(.pc-tema-toggle) .pc-acceso{
    Preferencias > Apariencia dentro del portal. */
 .pc-tema-toggle{
   position: fixed;
-  top: max(1rem, env(safe-area-inset-top, 0px));
+  top: max(1rem, var(--pc-area-segura-arriba));
   right: max(1rem, env(safe-area-inset-right, 0px));
   z-index: 20;
   display: inline-flex;

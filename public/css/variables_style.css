@@ -40,3 +40,9 @@
 @media (prefers-reduced-motion: reduce){
   :root{ transition: none; }
 }
+
+/* Altura segura arriba (notch / barra de estado). env() es lo normal; en Android viejo (probado en un Samsung J7 Prime,
+   Android 8.1) el WebView devuelve 0 aunque la barra de estado se dibuje encima del contenido, así que tema_temprano*.js
+   fija --pc-barra-estado con la altura real de la barra y se toma el MAYOR de los dos. Sin JS/en el resto de
+   dispositivos --pc-barra-estado no existe y queda solo env(). */
+:root{ --pc-area-segura-arriba: max(env(safe-area-inset-top, 0px), var(--pc-barra-estado, 0px)); }

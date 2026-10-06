@@ -22,6 +22,7 @@ import { cerrarSesion, obtenerSesion } from "../utils/sesion_utils.js";
 import { aplicarFondoInstitucional, refrescarFondoInstitucional } from "../utils/apariencia_utils.js";
 import { actualizarBadgeNotificaciones } from "../utils/notificaciones_utils.js";
 import { iniciarNavegacionAtras } from "../utils/navegacion_atras.js";
+import { iniciarPullRefrescar } from "../utils/pull_refrescar.js";
 
 /* ========================================================================
    LAYOUT COMÚN — nav inferior y botón(es) de cerrar sesión
@@ -89,6 +90,7 @@ export function iniciarLayout() {
   iniciarBottomNav();
   iniciarCerrarSesion();
   iniciarNavegacionAtras();
+  iniciarPullRefrescar();
   aplicarFondoInstitucional();
   actualizarBadgeNotificaciones();
 
