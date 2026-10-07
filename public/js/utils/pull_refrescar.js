@@ -16,7 +16,7 @@ const MAXIMO = 110;     // tope visual del arrastre
 const AMORTIGUACION = 0.5;
 
 // Cosas que, si están abiertas, hacen que el gesto sea de ellas y no de la página
-const SELECTOR_SUPERPUESTOS = ".swal2-container, .modal.show, .offcanvas.show, .pc-fecha-hora-popup.show, .pc-select-lista.show";
+const SELECTOR_SUPERPUESTOS = ".swal2-container, .modal.show, .offcanvas.show, .pc-fecha-hora-popup.show, .pc-select-lista.show, .pc-visor-pdf";
 
 function scrollActual() {
   const el = document.scrollingElement || document.documentElement;

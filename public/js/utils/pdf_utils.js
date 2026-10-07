@@ -427,24 +427,50 @@ export async function generarPdfDesdeElemento(elementoOSelector, opciones = {}) 
         throw new Error('generarPdfDesdeElemento: no se encontró el elemento a exportar');
     }
 
-    const { nombreArchivo = 'documento.pdf', titulo = 'Documento PetCore', ocultarSelectores = [] } = opciones;
+    const { nombreArchivo = 'documento.pdf', titulo = 'Documento PetCore', ocultarSelectores = [], accion = 'descargar' } = opciones;
 
     const elementosExcluidos = new Set(
         ocultarSelectores.flatMap(selector => Array.from(elemento.querySelectorAll(selector)))
     );
 
-    return generarPdfDesdeBloques(extraerBloques(elemento, elementosExcluidos), { nombreArchivo, titulo });
+    return generarPdfDesdeBloques(extraerBloques(elemento, elementosExcluidos), { nombreArchivo, titulo, accion });
 }
 
 /* Dibuja los bloques en un PDF y lo guarda. Común a los PDFs hechos desde el DOM (facturas) y a los armados con datos
    (cartilla digital). */
-async function generarPdfDesdeBloques(bloques, { nombreArchivo, titulo }) {
+async function generarPdfDesdeBloques(bloques, { nombreArchivo, titulo, accion = 'descargar' }) {
     const [, logo] = await Promise.all([asegurarLibreriasPdf(), cargarLogoPetcore()]);
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'pt', 'a4');
     dibujarBloques(pdf, bloques, { titulo, logo });
 
+    // "ver": se abre dentro de la app (visor propio, ver visor_pdf.js). "compartir": hoja de compartir del sistema.
+    // "descargar" (por defecto): lo de siempre, abajo.
+    if (accion === 'ver') {
+        const { abrirVisorPdf } = await import('./visor_pdf.js');
+        await abrirVisorPdf(pdf.output('arraybuffer'), {
+            titulo,
+            onCompartir: () => compartirPdf(pdf, nombreArchivo, titulo).catch((e) => console.error('[PDF] No se pudo compartir:', e)),
+            onDescargar: () => guardarPdf(pdf, nombreArchivo).then((r) => avisarDescarga(r)).catch((e) => console.error('[PDF] No se pudo descargar:', e))
+        });
+        return { accion: 'ver' };
+    }
+    if (accion === 'compartir') {
+        await compartirPdf(pdf, nombreArchivo, titulo);
+        return { accion: 'compartir' };
+    }
+    return { accion: 'descargar', ...(await guardarPdf(pdf, nombreArchivo)) };
+}
+
+// Desde el visor la descarga no pasa por el controller: se avisa aquí dónde quedó (solo en la app el archivo no es evidente).
+function avisarDescarga(resultado) {
+    if (resultado && resultado.nativo && window.Swal) {
+        window.Swal.fire({ icon: 'success', title: 'PDF descargado', text: 'Se guardó en ' + resultado.ubicacion + '.', confirmButtonColor: '#2D60A1' });
+    }
+}
+
+async function guardarPdf(pdf, nombreArchivo) {
     // pdf.save() descarga con un <a download> sintético -- funciona en cualquier navegador real, pero los WebView
     // nativos (Android/iOS, Capacitor) lo ignoran en silencio. Ahí se escribe el archivo a disco con el plugin
     // Filesystem (carpeta Documentos): queda guardado de verdad, sin abrir la hoja de compartir.
@@ -454,6 +480,41 @@ async function generarPdfDesdeBloques(bloques, { nombreArchivo, titulo }) {
 
     pdf.save(nombreArchivo);
     return { nativo: false, ubicacion: 'la carpeta de descargas de tu navegador' };
+}
+
+/* Compartir el PDF con el menú del sistema (WhatsApp, correo, Drive...).
+   - App nativa: se escribe en la carpeta de caché (se limpia sola, no ensucia Documentos) y se comparte esa ruta con
+     @capacitor/share (la caché ya está autorizada en file_paths.xml del FileProvider).
+   - Navegador: Web Share con archivo si el navegador lo soporta; si no, se descarga. */
+async function compartirPdf(pdf, nombreArchivo, titulo) {
+    if (window.Capacitor?.isNativePlatform?.()) {
+        const Filesystem = window.Capacitor?.Plugins?.Filesystem || window.Capacitor?.registerPlugin?.('Filesystem');
+        const Share = window.Capacitor?.Plugins?.Share || window.Capacitor?.registerPlugin?.('Share');
+        if (!Filesystem || !Share) throw new Error('compartirPdf: plugins Filesystem/Share no disponibles');
+
+        const dataUri = pdf.output('datauristring');
+        const base64 = dataUri.slice(dataUri.indexOf('base64,') + 'base64,'.length);
+        await Filesystem.writeFile({ path: nombreArchivo, data: base64, directory: 'CACHE', recursive: true });
+        const { uri } = await Filesystem.getUri({ path: nombreArchivo, directory: 'CACHE' });
+        try {
+            await Share.share({ title: titulo, text: titulo, url: uri, dialogTitle: 'Compartir PDF' });
+        } catch (error) {
+            // Cerrar la hoja sin elegir nada no es un error
+            if (!/cancel/i.test(String(error?.message || error))) throw error;
+        }
+        return;
+    }
+
+    const archivo = new File([pdf.output('blob')], nombreArchivo, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+        try {
+            await navigator.share({ files: [archivo], title: titulo });
+        } catch (error) {
+            if (error?.name !== 'AbortError') throw error;
+        }
+        return;
+    }
+    pdf.save(nombreArchivo);   // sin Web Share: al menos que lo pueda guardar
 }
 
 async function guardarPdfNativo(pdf, nombreArchivo) {
@@ -504,7 +565,7 @@ function fechaCorta(valor) {
  * @param {{mascota: Object, propietario: string, vacunas: Object[], antiparasitarios: Object[]}} datos
  * @returns {Promise<{nativo: boolean, ubicacion: string}>}
  */
-export async function generarPdfCartilla({ mascota, propietario, vacunas = [], antiparasitarios = [] }) {
+export async function generarPdfCartilla({ mascota, propietario, vacunas = [], antiparasitarios = [], accion = 'descargar' }) {
     const bloques = [];
 
     bloques.push({ tipo: 'titulo', texto: 'Datos de la mascota' });
@@ -555,6 +616,7 @@ export async function generarPdfCartilla({ mascota, propietario, vacunas = [], a
     const nombreLimpio = String(mascota.mas_nombre || 'mascota').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_');
     return generarPdfDesdeBloques(bloques, {
         titulo: `Cartilla digital · ${mascota.mas_nombre || 'Mascota'}`,
-        nombreArchivo: `cartilla_${nombreLimpio}.pdf`
+        nombreArchivo: `cartilla_${nombreLimpio}.pdf`,
+        accion
     });
 }

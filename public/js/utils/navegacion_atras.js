@@ -62,6 +62,11 @@ function cerrarCapaAbierta() {
     window.Swal.close();
     return true;
   }
+  // Visor de PDF a pantalla completa (visor_pdf.js): "atrás" lo cierra en vez de salir de la pantalla
+  if (typeof window.__pcCerrarVisorPdf === "function") {
+    window.__pcCerrarVisorPdf();
+    return true;
+  }
   const lista = document.querySelector(".pc-select-lista.show");
   if (lista) {
     lista.classList.remove("show");

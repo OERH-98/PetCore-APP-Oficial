@@ -140,17 +140,25 @@ function iniciarCambioFotoMascota(mascota) {
   });
 }
 
-/* Botón "Descargar cartilla digital": junta las vacunas ya cargadas (o las vuelve a pedir si fallaron) y los
-   antiparasitarios, y guarda el PDF en el teléfono. */
+/* Cartilla digital: junta las vacunas ya cargadas (o las vuelve a pedir si fallaron) y los antiparasitarios, y los
+   entrega según el botón: ver dentro de la app, descargar (guardar en el teléfono) o compartir. */
 function iniciarDescargaCartilla(mascota, sesion, vacunasCargadas) {
-  const boton = document.getElementById("pcBtnCartilla");
+  const contenedor = document.getElementById("pcAccionesCartilla");
+  if (!contenedor) return;
+  contenedor.classList.remove("d-none");
+
+  conectarAccionCartilla("pcBtnCartillaVer", "ver", "Abriendo cartilla...");
+  conectarAccionCartilla("pcBtnCartilla", "descargar", "Generando cartilla...");
+  conectarAccionCartilla("pcBtnCartillaCompartir", "compartir", "Preparando...");
+
+  function conectarAccionCartilla(idBoton, accion, textoCargando) {
+  const boton = document.getElementById(idBoton);
   if (!boton) return;
-  boton.classList.remove("d-none");
 
   boton.addEventListener("click", async function () {
     const original = boton.innerHTML;
     boton.disabled = true;
-    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando cartilla...';
+    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + textoCargando;
     try {
       const [vacunas, antiparasitarios] = await Promise.all([
         vacunasCargadas ? Promise.resolve(vacunasCargadas) : obtenerCartillasPorMascota(mascota.mas_id),
@@ -163,19 +171,21 @@ function iniciarDescargaCartilla(mascota, sesion, vacunasCargadas) {
         mascota: mascota,
         propietario: sesion.nombre || "",
         vacunas: ordenar(vacunas, "car_fecha_vacunacion"),
-        antiparasitarios: ordenar(antiparasitarios, "ap_fecha_aplicacion")
+        antiparasitarios: ordenar(antiparasitarios, "ap_fecha_aplicacion"),
+        accion: accion
       });
-      if (resultado && resultado.nativo) {
+      if (accion === "descargar" && resultado && resultado.nativo) {
         alertar({ icon: "success", title: "Cartilla descargada", text: "Se guardó en " + resultado.ubicacion + "." });
       }
     } catch (e) {
-      console.error("No se pudo generar la cartilla digital:", e);
+      console.error("No se pudo procesar la cartilla digital (" + accion + "):", e);
       alertar({ icon: "error", title: "No se pudo generar la cartilla", text: "Intenta de nuevo." });
     } finally {
       boton.disabled = false;
       boton.innerHTML = original;
     }
   });
+  }
 }
 
 async function iniciarDetalle() {

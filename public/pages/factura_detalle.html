@@ -84,9 +84,20 @@
       </div>
     </section>
 
-    <button type="button" class="btn btn-primary w-100 mb-4" id="pcBtnDescargarFactura" disabled>
-      <i class="fa-solid fa-download me-1"></i>Descargar PDF
-    </button>
+    <!-- Ver (dentro de la app), descargar y compartir el PDF -->
+    <div class="mb-4">
+      <button type="button" class="btn btn-primary w-100 mb-2" id="pcBtnVerFactura" disabled>
+        <i class="fa-solid fa-eye me-1"></i>Ver PDF
+      </button>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary flex-fill" id="pcBtnDescargarFactura" disabled>
+          <i class="fa-solid fa-download me-1"></i>Descargar PDF
+        </button>
+        <button type="button" class="btn btn-outline-primary flex-fill" id="pcBtnCompartirFactura" disabled>
+          <i class="fa-solid fa-share-nodes me-1"></i>Compartir PDF
+        </button>
+      </div>
+    </div>
 
     <div style="height:16px"></div>
   </main>

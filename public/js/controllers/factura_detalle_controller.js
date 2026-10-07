@@ -115,24 +115,27 @@ async function iniciarDetalle() {
       filaTotal("Total", dinero(factura.ven_total), true);
   }
 
-  const boton = document.getElementById("pcBtnDescargarFactura");
-  if (boton) {
+  // Tres acciones sobre el mismo PDF: ver dentro de la app, descargar (guardar en el teléfono) y compartir.
+  function conectarAccionPdf(idBoton, accion, textoCargando) {
+    const boton = document.getElementById(idBoton);
+    if (!boton) return;
     boton.disabled = false;
     boton.addEventListener("click", async function () {
       const original = boton.innerHTML;
       boton.disabled = true;
-      boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generando...';
+      boton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + textoCargando;
       try {
         const resultado = await generarPdfDesdeElemento("#pcFacturaContenido", {
           titulo: "Factura",
-          nombreArchivo: ("factura_" + numero).replace(/\s+/g, "_") + ".pdf"
+          nombreArchivo: ("factura_" + numero).replace(/\s+/g, "_") + ".pdf",
+          accion: accion
         });
-        // En la app el PDF se guarda en el teléfono (no se abre la hoja de compartir): se avisa dónde quedó.
-        if (resultado && resultado.nativo) {
+        // Al descargar en la app se avisa dónde quedó el archivo; ver y compartir ya son visibles por sí mismos.
+        if (accion === "descargar" && resultado && resultado.nativo) {
           alertar({ icon: "success", title: "PDF descargado", text: "Se guardó en " + resultado.ubicacion + "." });
         }
       } catch (e) {
-        console.error("No se pudo generar el PDF de la factura:", e);
+        console.error("No se pudo procesar el PDF de la factura (" + accion + "):", e);
         alertar({ icon: "error", title: "No se pudo generar el PDF", text: "Intenta de nuevo." });
       } finally {
         boton.disabled = false;
@@ -140,6 +143,9 @@ async function iniciarDetalle() {
       }
     });
   }
+  conectarAccionPdf("pcBtnVerFactura", "ver", "Abriendo...");
+  conectarAccionPdf("pcBtnDescargarFactura", "descargar", "Generando...");
+  conectarAccionPdf("pcBtnCompartirFactura", "compartir", "Preparando...");
 }
 
 document.addEventListener("DOMContentLoaded", function () {
