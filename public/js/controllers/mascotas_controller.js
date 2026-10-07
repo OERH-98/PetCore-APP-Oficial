@@ -95,9 +95,9 @@ function tarjetaMascota(m, i, ultimaVisita) {
         "</div>" +
         '<dl class="row g-0 mt-3 mb-3 pc-meta">' +
           '<dt class="col-6 fw-normal">Peso actual</dt>' +
-          '<dd class="col-6 text-end mb-1 pc-dato fw-semibold text-dark">' + (m.mas_peso_kg != null ? m.mas_peso_kg + " kg" : "—") + "</dd>" +
+          '<dd class="col-6 text-end mb-1 pc-dato fw-semibold">' + (m.mas_peso_kg != null ? m.mas_peso_kg + " kg" : "—") + "</dd>" +
           '<dt class="col-6 fw-normal">Última visita</dt>' +
-          '<dd class="col-6 text-end mb-0 fw-semibold text-dark">' + ultimaVisita + "</dd>" +
+          '<dd class="col-6 text-end mb-0 fw-semibold">' + ultimaVisita + "</dd>" +
         "</dl>" +
         '<a class="btn btn-primary w-100 mt-auto" href="mascota_detalle.html?id=' + m.mas_id + '">' +
           'Ver detalles<span class="visually-hidden"> de ' + escaparHtml(m.mas_nombre) + "</span></a>" +
