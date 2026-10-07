@@ -71,10 +71,8 @@
   // igual, un .then() sobre una promesa ya resuelta sigue funcionando bien.
   var promesaAsync = null;
 
-  function verificarSesionAsync() {
-    if (promesaAsync) return promesaAsync;
-
-    promesaAsync = fetch(conMismoHost(API_URL_ME), { credentials: "include" })
+  function pedirMe() {
+    return fetch(conMismoHost(API_URL_ME), { credentials: "include" })
       .then(function (resp) {
         if (!resp.ok) return null;
         return resp.json().then(desenvolverApiResponse);
@@ -82,7 +80,31 @@
       .catch(function (e) {
         console.error("No se pudo verificar la sesión (async):", e);
         return null;
-      })
+      });
+  }
+
+  // Adelanta la petición a /me desde el <head> (tema_temprano.js) para que viaje en paralelo con la carga de la
+  // página en vez de esperar a que arranquen los módulos. NO se memoriza como definitiva: verificarSesionAsync() solo
+  // la acepta si trajo una sesión; si falló o dijo "sin sesión" vuelve a preguntar (un fallo pasajero del arranque no
+  // debe sacar al usuario). En iOS NO se adelanta: ahí la cookie solo viaja por el puente nativo y esa ruta ya está
+  // probada tal cual (petición desde el módulo), así que no se cambia.
+  var promesaPrecarga = null;
+
+  function esIos() {
+    try { return !!(window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === "ios"); }
+    catch (e) { return false; }
+  }
+
+  function precargarSesion() {
+    if (promesaPrecarga || promesaAsync || esIos()) return;
+    promesaPrecarga = pedirMe();
+  }
+
+  function verificarSesionAsync() {
+    if (promesaAsync) return promesaAsync;
+
+    promesaAsync = (promesaPrecarga || Promise.resolve(null))
+      .then(function (previo) { return previo || pedirMe(); })
       .then(function (resultado) {
         // Comparte el resultado con la caché síncrona: si tema_temprano.js
         // todavía no corrió (o corrió y falló en iOS), que reutilice este
@@ -98,11 +120,13 @@
     verificada = false;
     datos = null;
     promesaAsync = null;
+    promesaPrecarga = null;
   }
 
   window.SesionTempranaService = {
     verificarSesionSync: verificarSesionSync,
     verificarSesionAsync: verificarSesionAsync,
+    precargarSesion: precargarSesion,
     invalidarSesionCache: invalidarSesionCache
   };
 })();

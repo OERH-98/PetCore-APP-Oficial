@@ -16,28 +16,24 @@
    de la página redirige al login enseguida).
    ========================================================================== */
 (function () {
-  // El pro_id ya NO se lee de ningún almacenamiento del navegador: se le
-  // pregunta al backend (que lo saca de la cookie httpOnly) a través de
-  // services/sesion_temprana_service.js -- la llamada a la API vive en el
-  // service, no acá. Es síncrona porque el tema se decide antes del primer
-  // render.
-  function sesionActual() {
-    var me = window.SesionTempranaService ? window.SesionTempranaService.verificarSesionSync() : null;
-    return me && me.authenticated && me.tipo === "PROPIETARIO" ? { pro_id: me.id } : null;
-  }
+  // El tema se decide ANTES del primer render, así que no puede esperar a la red. Antes aquí se hacía una petición
+  // SÍNCRONA a /api/auth/me/propietario para saber de quién son las preferencias: congelaba la pantalla (sin pintar
+  // nada) durante un viaje completo al servidor en CADA página, y en iOS ni siquiera funcionaba (el XHR síncrono lo
+  // esquiva el puente nativo de cookies, por eso ya se caía a este mismo respaldo).
+  // Ahora se usa directamente el último propietario conocido en ESTE dispositivo (pc_ultimo_pro_id, que se anota cada
+  // vez que la sesión se verifica de verdad -- ver sesion_utils.js). Es solo un número para leer preferencias
+  // cosméticas (tema, daltonismo...): no da ningún acceso. La sesión real se sigue verificando contra el backend en
+  // cada carga (requerirSesion). Si resulta ser OTRO propietario, sesion_utils.js recarga la página una vez para
+  // aplicar sus preferencias.
+  var proId = null;
+  try { proId = window.localStorage.getItem("pc_ultimo_pro_id") || null; } catch (e) { /* sin localStorage: tema del sistema */ }
 
-  var sesion = sesionActual();
-  var proId = sesion && sesion.pro_id;
-
-  // Último propietario conocido en ESTE dispositivo. La consulta de arriba es una petición de red (síncrona) y
-  // puede fallar un instante (servidor dormido/ocupado, 503, sin señal): sin esto, el tema y la accesibilidad
-  // guardados no se encontraban y la app caía al tema del sistema, "ignorando" el modo oscuro elegido. Si la
-  // consulta responde, se actualiza; si no, se reutiliza el último (la página igual redirige al login si de
-  // verdad no hay sesión). Solo es un id numérico para leer preferencias cosméticas, no da ningún acceso.
+  // Arranca YA la verificación de sesión en segundo plano (sin bloquear): viaja en paralelo con la carga de CSS, JS y
+  // fuentes, y requerirSesion() reutiliza ese mismo resultado cuando le toca. En iOS no se adelanta (ver
+  // sesion_temprana_service.js): ahí se queda exactamente como estaba.
   try {
-    if (proId) window.localStorage.setItem("pc_ultimo_pro_id", String(proId));
-    else proId = window.localStorage.getItem("pc_ultimo_pro_id") || null;
-  } catch (e) { /* sin localStorage: se queda como estaba */ }
+    if (window.SesionTempranaService && window.SesionTempranaService.precargarSesion) window.SesionTempranaService.precargarSesion();
+  } catch (e) { /* requerirSesion() la pedirá cuando le toque */ }
 
   /* -------------------------------------------------------------------
      1. TEMA: swap real de <link> (no solo una variable CSS), para poder

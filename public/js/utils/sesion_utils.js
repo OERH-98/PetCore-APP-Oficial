@@ -96,8 +96,21 @@ export async function obtenerSesionVerificada() {
    número para leer preferencias cosméticas; no da ningún acceso. */
 function recordarUltimoPropietario(proId) {
   try {
-    if (proId) window.localStorage.setItem("pc_ultimo_pro_id", String(proId));
-  } catch (e) { /* sin localStorage: tema_temprano usa su propia consulta */ }
+    if (!proId) return;
+    const anterior = window.localStorage.getItem("pc_ultimo_pro_id");
+    window.localStorage.setItem("pc_ultimo_pro_id", String(proId));
+
+    // tema_temprano.js ya pintó esta página con las preferencias de "anterior". Si la sesión real es de OTRO
+    // propietario (cambio de cuenta en el mismo teléfono) o, sin id previo, ya hay preferencias guardadas para este,
+    // se recarga UNA vez para aplicar las correctas. La marca en sessionStorage evita cualquier bucle.
+    const cambio = anterior !== null && anterior !== String(proId);
+    const primeraVezConPreferencias = anterior === null && window.localStorage.getItem("pc_tema_" + proId) !== null;
+    if ((cambio || primeraVezConPreferencias) && window.sessionStorage.getItem("pc_tema_reconciliado") !== String(proId)) {
+      window.sessionStorage.setItem("pc_tema_reconciliado", String(proId));
+      console.log("[SESION] Propietario distinto al último conocido: se recarga para aplicar sus preferencias");
+      window.location.reload();
+    }
+  } catch (e) { /* sin almacenamiento: no hay preferencias que reconciliar */ }
 }
 
 /* Protege una página: verifica la sesión contra el backend (cookie
