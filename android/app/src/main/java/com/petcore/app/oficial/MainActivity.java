@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // Plugin propio de la app: debe registrarse ANTES de super.onCreate()
         registerPlugin(FondoVentanaPlugin.class);
+        registerPlugin(GuardarArchivoPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

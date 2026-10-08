@@ -524,15 +524,34 @@ async function guardarPdfNativo(pdf, nombreArchivo) {
     }
     const plataforma = window.Capacitor?.getPlatform?.();
 
+    // "data:application/pdf;filename=...;base64,XXXX" -- Filesystem.writeFile solo quiere el base64 puro.
+    const dataUri = pdf.output('datauristring');
+    const base64 = dataUri.slice(dataUri.indexOf('base64,') + 'base64,'.length);
+
+    // Android 10+ (almacenamiento por ámbitos): escribir con ruta directa en Documentos falla con "EACCES (Permission
+    // denied)" (visto en un Galaxy S25 Ultra). Se guarda con el plugin nativo propio (GuardarArchivoPlugin.java), que
+    // usa MediaStore y deja el PDF en Descargas/PetCore sin pedir permisos. Si no está disponible o es Android 9 o
+    // anterior, se sigue con Filesystem como antes.
+    if (plataforma === 'android') {
+        const GuardarArchivo = window.Capacitor?.Plugins?.GuardarArchivo || window.Capacitor?.registerPlugin?.('GuardarArchivo');
+        if (GuardarArchivo?.guardarEnDescargas) {
+            try {
+                await GuardarArchivo.guardarEnDescargas({ nombre: nombreArchivo, datos: base64, tipo: 'application/pdf' });
+                return { nativo: true, ubicacion: 'la carpeta Descargas > PetCore de tu teléfono' };
+            } catch (error) {
+                // "SDK_ANTIGUO" es el caso normal de Android 9 o anterior; cualquier otro error se registra y se reintenta abajo
+                if (!/SDK_ANTIGUO/.test(String(error?.message || error))) {
+                    console.warn('[PDF] Guardado en Descargas falló, se reintenta con Filesystem:', error);
+                }
+            }
+        }
+    }
+
     // Android antiguo (≤ 9) pide permiso de almacenamiento para escribir en carpetas públicas; en versiones nuevas
     // la llamada no pide nada. Si el usuario lo niega, el writeFile de abajo falla y se avisa.
     if (plataforma === 'android' && Filesystem.requestPermissions) {
         try { await Filesystem.requestPermissions(); } catch (e) { /* se intenta escribir igual */ }
     }
-
-    // "data:application/pdf;filename=...;base64,XXXX" -- Filesystem.writeFile solo quiere el base64 puro.
-    const dataUri = pdf.output('datauristring');
-    const base64 = dataUri.slice(dataUri.indexOf('base64,') + 'base64,'.length);
 
     await Filesystem.writeFile({
         path: nombreArchivo,
