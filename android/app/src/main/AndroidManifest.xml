@@ -20,6 +20,12 @@
             </intent-filter>
         </activity>
 
+        <!-- Canal por defecto de los push de FCM (Android 8+): el que crea la app al arrancar con importancia alta
+             (push_fcm_utils.js, mismo id). Cubre los mensajes que lleguen sin channelId. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="petcore_alertas" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

@@ -16,6 +16,32 @@ function obtenerPushNotifications() {
         || window.Capacitor.registerPlugin?.("PushNotifications");
 }
 
+/* Canal de notificaciones de Android 8+ con importancia ALTA (importancia 4:
+   ventana emergente + sonido + vibración). Sin él, los avisos caen en el canal
+   por defecto de FCM ("Miscellaneous", importancia media): llegan a tiempo pero
+   entran callados a la bandeja, sin ventana emergente, y parece que "tardaron".
+   El id debe coincidir con CANAL_ANDROID de PushTokenFcmService (API) y con el
+   meta-data default_notification_channel_id del AndroidManifest. En iOS no
+   existen los canales. Es idempotente: crearlo otra vez no hace nada. */
+const CANAL_AVISOS = {
+    id: "petcore_alertas",
+    name: "Avisos de PetCore",
+    description: "Citas, consultas, hospitalización y resultados de tus mascotas",
+    importance: 4,
+    visibility: 1,
+    vibration: true,
+    lights: true,
+};
+
+async function asegurarCanalAvisos(PushNotifications) {
+    if (window.Capacitor?.getPlatform?.() !== "android") return;
+    try {
+        await PushNotifications.createChannel(CANAL_AVISOS);
+    } catch (error) {
+        console.warn("No se pudo crear el canal de avisos:", error);
+    }
+}
+
 /* Pide el permiso del sistema -- se llama al ARRANCAR la app (ver
    index_controller.js), para que el diálogo nativo aparezca cuanto antes en
    vez de escondido varias pantallas después. No registra el token todavía
@@ -27,6 +53,8 @@ function obtenerPushNotifications() {
 export async function pedirPermisoPushNativo() {
     const PushNotifications = obtenerPushNotifications();
     if (!PushNotifications) return;
+
+    await asegurarCanalAvisos(PushNotifications);   // antes del permiso: el canal no necesita permiso y ya queda listo
 
     try {
         const estado = await PushNotifications.checkPermissions();
@@ -46,6 +74,8 @@ export async function pedirPermisoPushNativo() {
 export async function activarPushNativo() {
     const PushNotifications = obtenerPushNotifications();
     if (!PushNotifications) return;
+
+    await asegurarCanalAvisos(PushNotifications);
 
     try {
         const estado = await PushNotifications.checkPermissions();
