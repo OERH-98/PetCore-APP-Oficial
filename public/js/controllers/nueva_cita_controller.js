@@ -26,6 +26,25 @@ import { iniciarLayout, requerirSesion, dinero, soloFecha, esFechaFeriado, mostr
 import { crearSelectPersonalizado } from "../utils/selector_personalizado.js";
 import { crearFechaPersonalizada, crearHoraPersonalizada } from "../utils/fecha_hora_personalizada.js";
 
+// Hora actual del teléfono ("HH:mm") y fecha de hoy ("yyyy-MM-dd"), ambas locales (no UTC).
+function horaActualHHmm() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+function fechaHoyISO() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+// ¿Esa fecha+hora ya pasó? Hoy: una hora anterior a la actual (la hora actual en sí todavía vale); un día anterior
+// siempre; un día futuro nunca. El selector solo ofrece de hoy en adelante, así que en la práctica solo importa "hoy".
+function esHoraPasada(fechaISO, horaHHmm) {
+  if (!fechaISO || !horaHHmm) return false;
+  const hoy = fechaHoyISO();
+  if (fechaISO < hoy) return true;
+  if (fechaISO > hoy) return false;
+  return String(horaHHmm).slice(0, 5) < horaActualHHmm();
+}
+
 // hora, turnoInicio y turnoFin llegan como "HH:mm". El turno Nocturno cruza
 // medianoche (ej. 23:00–07:00), así que no basta un simple inicio <= hora < fin.
 function turnoCubreHora(turnoInicio, turnoFin, hora) {
@@ -158,9 +177,12 @@ async function iniciarNuevaCita() {
     return cacheHorasOcupadas.set;
   }
 
-  crearHoraPersonalizada(hora, {
+  // Un horario no se puede elegir si ya pasó hoy (según el reloj del teléfono) o si no hay veterinario libre.
+  const personalizadoHora = crearHoraPersonalizada(hora, {
     placeholder: "Elige una hora",
-    estaDeshabilitada: function (horaStr) { return horasOcupadasPara(fecha.value).has(horaStr); }
+    estaDeshabilitada: function (horaStr) {
+      return esHoraPasada(fecha.value, horaStr) || horasOcupadasPara(fecha.value).has(horaStr);
+    }
   });
   crearFechaPersonalizada(fecha, {
     placeholder: "Elige una fecha",
@@ -279,6 +301,15 @@ async function iniciarNuevaCita() {
   // La cita no puede quedar en el pasado
   fecha.min = isoHoy;
 
+  // Al cambiar la fecha (ej. de mañana a hoy), la hora que ya estaba elegida puede haber quedado en el pasado.
+  fecha.addEventListener("change", function () {
+    if (hora.value && esHoraPasada(fecha.value, hora.value)) {
+      hora.value = "";
+      if (personalizadoHora) personalizadoHora.refrescar();
+      mostrarToast("info", "Esa hora ya pasó hoy; elige una hora posterior.");
+    }
+  });
+
   // Las citas son siempre en punto o y media (step="1800" en el HTML, mismo
   // intervalo que TRG_CIT_VALIDAR_ESPACIADO en la BD) y, además, el selector
   // deshabilita en vivo los horarios sin ningún veterinario libre (ver
@@ -318,6 +349,11 @@ async function iniciarNuevaCita() {
 
     if (esFechaFeriado(feriados, fecha.value)) {
       mostrarToast("warning", "Ese día es feriado y la clínica no atiende. Elige otra fecha.");
+      return;
+    }
+
+    if (esHoraPasada(fecha.value, hora.value)) {
+      mostrarToast("warning", "Esa hora ya pasó (ahora son las " + horaActualHHmm() + "). Elige una hora posterior.");
       return;
     }
 

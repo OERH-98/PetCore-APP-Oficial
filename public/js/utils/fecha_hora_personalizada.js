@@ -503,8 +503,19 @@ export function crearHoraPersonalizada(input, opciones = {}) {
         break;
       case "ahora": {
         const ahora = new Date();
-        horaPend = ahora.getHours();
-        minPend = ahora.getMinutes() - (ahora.getMinutes() % pasoMinutos);
+        // Se redondea hacia abajo al paso del selector (09:47 -> 09:30). Si ese horario está deshabilitado (ya pasó
+        // u ocupado) se avanza al siguiente libre DEL MISMO DÍA; si no hay ninguno, no se elige nada.
+        const MINUTOS_DIA = 24 * 60;
+        let total = ahora.getHours() * 60 + ahora.getMinutes() - (ahora.getMinutes() % pasoMinutos);
+        while (total < MINUTOS_DIA && estaOcupada(pad2(Math.floor(total / 60)) + ":" + pad2(total % 60))) {
+          total += pasoMinutos;
+        }
+        if (total >= MINUTOS_DIA) {
+          cerrar();
+          break;
+        }
+        horaPend = Math.floor(total / 60);
+        minPend = total % 60;
         confirmarSiCompleto();
         break;
       }
