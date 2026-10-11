@@ -25,6 +25,16 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="petcore_alertas" />
+        <!-- Ícono pequeño de la barra de estado: Android pide una silueta BLANCA con transparencia (sin color); si no
+             se declara usa el ícono del launcher, que a color se ve como un cuadro gris. Los PNG están en
+             res/drawable-{mdpi..xxxhdpi}/ic_stat_petcore.png (24/36/48/72/96 px). El color tiñe el ícono y el
+             nombre de la app al desplegar la notificación. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_petcore" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/colorPrimary" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
