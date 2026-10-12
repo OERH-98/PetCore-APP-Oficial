@@ -17,6 +17,8 @@
    PDF los define este archivo, no se heredan del CSS.
    ========================================================================== */
 
+import { obtenerConfiguracionActual } from '../services/config_sistema_service.js';
+
 const CDN_JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 const CDN_AUTOTABLE = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
 
@@ -36,9 +38,11 @@ const COLOR_GRIS_LINEA = [222, 226, 230]; // línea del pie
 // Geometría del membrete/pie, en puntos (A4 = 595.28 x 841.89 pt)
 const MARGEN = 36;
 const ENCABEZADO_LOGO_Y = 22;
-const ENCABEZADO_LOGO_ALTO = 30;
-const ENCABEZADO_LINEA_Y = 62;
-const CONTENIDO_Y_INICIO = 78;
+const ENCABEZADO_LOGO_ALTO = 34;
+const ENCABEZADO_LOGO_ANCHO_MAX = 150; // un logo muy ancho se achica para no comerse el texto
+const ENCABEZADO_LOGO_RELLENO = 5;     // margen de la placa azul cuando el logo es blanco
+const ENCABEZADO_LINEA_Y = 66;
+const CONTENIDO_Y_INICIO = 82;
 const PIE_ALTO_RESERVADO = 46; // separación mínima entre el contenido y el pie
 
 let promesaLibrerias = null;
@@ -66,35 +70,129 @@ function asegurarLibreriasPdf() {
     return promesaLibrerias;
 }
 
-// El logo vive como .svg y jsPDF.addImage no acepta SVG directamente -- se
-// dibuja una sola vez en un <canvas> y de ahí se saca el PNG que sí
-// entiende jsPDF. Cacheado: el logo es el mismo en todos los PDFs de la
-// sesión, no tiene sentido recargarlo en cada uno.
-function cargarLogoPetcore() {
-    if (!promesaLogo) {
-        promesaLogo = new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                // jsPDF NO reutiliza los bytes ya comprimidos del PNG -- lo
-                // decodifica a píxeles crudos (RGBA) para incrustarlo, así
-                // que el tamaño del PDF depende del ancho x alto del
-                // CANVAS, no de cuánto pese el .svg de origen. El logo se
-                // dibuja en el PDF a ~30pt de alto (0.42in); renderizarlo a
-                // 150px de alto ya son ~360 DPI -- de sobra para verse
-                // nítido -- en vez de los 401px nativos del .svg.
-                const ALTURA_RENDER_PX = 150;
+// Los logos llegan como .svg (el de PetCore, en el repo) o como PNG/JPG/SVG subidos en Configuración del Sistema
+// (Cloudinary), y jsPDF.addImage no acepta SVG directamente -- se dibuja una sola vez en un <canvas> y de ahí se
+// saca el PNG que sí entiende jsPDF.
+//
+// jsPDF NO reutiliza los bytes ya comprimidos del PNG -- lo decodifica a píxeles crudos (RGBA) para incrustarlo, así
+// que el tamaño del PDF depende del ancho x alto del CANVAS, no de cuánto pese el archivo de origen. El logo se
+// dibuja en el PDF a ~34pt de alto; renderizarlo a 150px de alto ya son ~320 DPI -- de sobra para verse nítido.
+//
+// `cruzada`: imagen de otro dominio (Cloudinary). Responde con Access-Control-Allow-Origin: *, así que con
+// crossOrigin="anonymous" el canvas no queda "manchado" y toDataURL() funciona; sin eso la imagen se vería en
+// pantalla pero no se podría incrustar en el PDF.
+const TIEMPO_MAXIMO_IMAGEN_MS = 10000;
+const ALTURA_RENDER_LOGO_PX = 150;
+
+function cargarImagenParaPdf(url, { cruzada = false } = {}) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        if (cruzada) img.crossOrigin = 'anonymous';
+        const limite = setTimeout(() => reject(new Error(`Tardó demasiado en cargar ${url}`)), TIEMPO_MAXIMO_IMAGEN_MS);
+        img.onload = () => {
+            clearTimeout(limite);
+            try {
+                if (!img.naturalWidth || !img.naturalHeight) throw new Error(`La imagen ${url} no trae dimensiones`);
                 const proporcion = img.naturalWidth / img.naturalHeight;
                 const canvas = document.createElement('canvas');
-                canvas.height = ALTURA_RENDER_PX;
-                canvas.width = Math.round(ALTURA_RENDER_PX * proporcion);
-                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                resolve({ dataUrl: canvas.toDataURL('image/png'), proporcion });
-            };
-            img.onerror = () => reject(new Error('No se pudo cargar el logo de PetCore'));
-            img.src = RUTA_LOGO;
+                canvas.height = ALTURA_RENDER_LOGO_PX;
+                canvas.width = Math.max(1, Math.round(ALTURA_RENDER_LOGO_PX * proporcion));
+                const contexto = canvas.getContext('2d', { willReadFrequently: true });
+                contexto.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve({
+                    dataUrl: canvas.toDataURL('image/png'),
+                    proporcion,
+                    sobreFondoOscuro: esLogoClaroSobreTransparencia(contexto, canvas.width, canvas.height)
+                });
+            } catch (error) {
+                reject(error);
+            }
+        };
+        img.onerror = () => { clearTimeout(limite); reject(new Error(`No se pudo cargar la imagen ${url}`)); };
+        img.src = url;
+    });
+}
+
+// Los logos de Configuración del Sistema se suben pensando en la barra lateral AZUL: es habitual que sean blancos
+// y con fondo transparente, y sobre el papel blanco del PDF no se verían. Si el logo es transparente Y casi todo
+// su dibujo es claro, el membrete lo apoya sobre una placa azul. Una imagen opaca (ej. un JPG con fondo blanco) trae
+// su propio fondo y se deja tal cual.
+function esLogoClaroSobreTransparencia(contexto, ancho, alto) {
+    const { data } = contexto.getImageData(0, 0, ancho, alto);
+    let transparentes = 0;
+    let opacos = 0;
+    let luminancia = 0;
+    for (let i = 0; i < data.length; i += 16) {          // 1 de cada 4 píxeles alcanza
+        if (data[i + 3] < 26) { transparentes++; continue; }
+        opacos++;
+        luminancia += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+    }
+    const total = transparentes + opacos;
+    if (!total || !opacos || transparentes / total < 0.05) return false;
+    return (luminancia / opacos) / 255 > 0.8;
+}
+
+// Logo de PetCore (el de siempre): se usa cuando no hay forma de leer la configuración. Cacheado: es el mismo en
+// todos los PDFs de la sesión, no tiene sentido recargarlo en cada uno.
+function cargarLogoPetcore() {
+    if (!promesaLogo) {
+        promesaLogo = cargarImagenParaPdf(RUTA_LOGO).catch(error => {
+            promesaLogo = null;
+            throw error;
         });
     }
     return promesaLogo;
+}
+
+// Nombre y logo que el administrador dejó en Configuración del Sistema (los mismos de la barra lateral):
+//   - config leída y con logo      -> nombre + ese logo (primero el ícono; si no hay, el logo con texto)
+//   - config leída y SIN logo      -> solo el nombre (no se le inventa un logo)
+//   - config que no responde       -> lo último leído bien, o el membrete de PetCore de siempre
+// Se consulta en cada PDF (un GET liviano) para que un cambio del admin se vea en el siguiente documento; nunca
+// debe impedir generar el PDF, por eso cualquier falla cae al membrete por defecto.
+const NOMBRE_POR_DEFECTO = 'PetCore';
+const TIEMPO_MAXIMO_CONFIG_MS = 4000;
+let ultimaIdentidad = null;
+
+async function cargarIdentidadClinica() {
+    let configuracion = null;
+    try {
+        configuracion = await Promise.race([
+            obtenerConfiguracionActual(),
+            new Promise(resolve => setTimeout(() => resolve(null), TIEMPO_MAXIMO_CONFIG_MS))
+        ]);
+    } catch (error) {
+        console.warn('[PDF] No se pudo leer la configuración del sistema:', error);
+    }
+
+    if (!configuracion) {
+        if (ultimaIdentidad) return ultimaIdentidad;
+        return { nombre: NOMBRE_POR_DEFECTO, logo: await cargarLogoPetcore().catch(() => null) };
+    }
+
+    const nombre = String(configuracion.sis_nombre_sistema || '').trim() || NOMBRE_POR_DEFECTO;
+    let logo = null;
+    for (const url of [configuracion.sis_logo_url, configuracion.sis_logo_completo_url]) {
+        if (!url) continue;
+        try {
+            logo = await cargarImagenParaPdf(url, { cruzada: true });
+            break;
+        } catch (error) {
+            console.warn('[PDF] No se pudo usar el logo configurado, se prueba el siguiente:', error);
+        }
+    }
+
+    ultimaIdentidad = { nombre, logo };
+    return ultimaIdentidad;
+}
+
+// Recorta con "..." para que un nombre o título largo no pise lo que tiene al lado. Usa la fuente y tamaño que
+// estén activos en ese momento (llamar después de setFont/setFontSize).
+function ajustarTexto(pdf, texto, anchoMaximo) {
+    let corte = String(texto ?? '');
+    if (pdf.getTextWidth(corte) <= anchoMaximo) return corte;
+    while (corte.length > 1 && pdf.getTextWidth(corte + '...') > anchoMaximo) corte = corte.slice(0, -1);
+    return corte.trimEnd() + '...';
 }
 
 function formatearFechaGeneracion() {
@@ -104,35 +202,54 @@ function formatearFechaGeneracion() {
     return `Generado el ${fecha} · ${hora}`;
 }
 
-// Logo + título del documento a la izquierda, fecha de generación debajo, y
-// una línea de marca separándolo del contenido -- se llama una vez por
-// página física (ver asegurarMembretePagina).
-function dibujarEncabezado(pdf, { titulo, logo, anchoPagina }) {
-    const logoAncho = ENCABEZADO_LOGO_ALTO * logo.proporcion;
-    // Alias fijo: sin esto, jsPDF incrusta una copia nueva del logo por
-    // cada página en vez de reutilizar un único XObject.
-    pdf.addImage(logo.dataUrl, 'PNG', MARGEN, ENCABEZADO_LOGO_Y, logoAncho, ENCABEZADO_LOGO_ALTO, 'logo-petcore-membrete');
+// Logo del sistema (si tiene) + su NOMBRE, el título del documento y la fecha de generación, y una línea de marca
+// separándolo del contenido -- se llama una vez por página física (ver asegurarMembretePagina).
+function dibujarEncabezado(pdf, { titulo, nombre, logo, anchoPagina }) {
+    let textoX = MARGEN;
 
-    const textoX = MARGEN + logoAncho + 14;
+    if (logo) {
+        // Un logo muy ancho se limita a ENCABEZADO_LOGO_ANCHO_MAX (baja su alto) para que el texto siempre tenga lugar.
+        const logoAlto = Math.min(ENCABEZADO_LOGO_ALTO, ENCABEZADO_LOGO_ANCHO_MAX / logo.proporcion);
+        const logoAncho = logoAlto * logo.proporcion;
+        const logoY = ENCABEZADO_LOGO_Y + (ENCABEZADO_LOGO_ALTO - logoAlto) / 2;
+        const relleno = logo.sobreFondoOscuro ? ENCABEZADO_LOGO_RELLENO : 0;
+
+        if (relleno) {
+            pdf.setFillColor(...COLOR_AZUL_MEDIO);
+            pdf.roundedRect(MARGEN, logoY - relleno, logoAncho + relleno * 2, logoAlto + relleno * 2, 4, 4, 'F');
+        }
+        // Alias fijo: sin esto, jsPDF incrusta una copia nueva del logo por
+        // cada página en vez de reutilizar un único XObject.
+        pdf.addImage(logo.dataUrl, 'PNG', MARGEN + relleno, logoY, logoAncho, logoAlto, 'logo-membrete');
+        textoX = MARGEN + logoAncho + relleno * 2 + 14;
+    }
+
+    const anchoTexto = anchoPagina - MARGEN - textoX;
+
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(13);
     pdf.setTextColor(...COLOR_AZUL_OSCURO);
-    pdf.text(titulo, textoX, ENCABEZADO_LOGO_Y + 13);
+    pdf.text(ajustarTexto(pdf, nombre, anchoTexto), textoX, ENCABEZADO_LOGO_Y + 11);
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.setTextColor(...COLOR_AZUL_MEDIO);
+    pdf.text(ajustarTexto(pdf, titulo, anchoTexto), textoX, ENCABEZADO_LOGO_Y + 25);
 
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8.5);
+    pdf.setFontSize(8);
     pdf.setTextColor(...COLOR_GRIS_META);
-    pdf.text(formatearFechaGeneracion(), textoX, ENCABEZADO_LOGO_Y + 25);
+    pdf.text(formatearFechaGeneracion(), textoX, ENCABEZADO_LOGO_Y + 37);
 
     pdf.setDrawColor(...COLOR_AZUL_MEDIO);
     pdf.setLineWidth(0.75);
     pdf.line(MARGEN, ENCABEZADO_LINEA_Y, anchoPagina - MARGEN, ENCABEZADO_LINEA_Y);
 }
 
-// Línea sutil + "PetCore" a la izquierda -- el número de página se agrega
+// Línea sutil + nombre del sistema a la izquierda -- el número de página se agrega
 // después, en una pasada final (dibujarNumerosPagina), porque el total de
 // páginas no se conoce hasta que TODO el documento ya se dibujó.
-function dibujarPieBase(pdf, { anchoPagina, altoPagina }) {
+function dibujarPieBase(pdf, { anchoPagina, altoPagina }, nombre) {
     const lineaY = altoPagina - PIE_ALTO_RESERVADO + 10;
     const textoY = altoPagina - PIE_ALTO_RESERVADO + 24;
 
@@ -143,7 +260,8 @@ function dibujarPieBase(pdf, { anchoPagina, altoPagina }) {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);
     pdf.setTextColor(...COLOR_GRIS_META);
-    pdf.text('PetCore · Sistema de gestión veterinaria', MARGEN, textoY);
+    // Deja libre la derecha, donde después se escribe "Página X de Y"
+    pdf.text(ajustarTexto(pdf, `${nombre} · Sistema de gestión veterinaria`, anchoPagina - MARGEN * 2 - 90), MARGEN, textoY);
 }
 
 function dibujarNumerosPagina(pdf, { anchoPagina, altoPagina }) {
@@ -292,7 +410,7 @@ function crearContexto(pdf) {
     };
 }
 
-function dibujarBloques(pdf, bloques, { titulo, logo }) {
+function dibujarBloques(pdf, bloques, { titulo, nombre, logo }) {
     const ctx = crearContexto(pdf);
     const paginasConMembrete = new Set();
     let cursorY = CONTENIDO_Y_INICIO;
@@ -301,8 +419,8 @@ function dibujarBloques(pdf, bloques, { titulo, logo }) {
         const numeroPagina = pdf.internal.getCurrentPageInfo().pageNumber;
         if (paginasConMembrete.has(numeroPagina)) return;
         paginasConMembrete.add(numeroPagina);
-        dibujarEncabezado(pdf, { titulo, logo, anchoPagina: ctx.anchoPagina });
-        dibujarPieBase(pdf, ctx);
+        dibujarEncabezado(pdf, { titulo, nombre, logo, anchoPagina: ctx.anchoPagina });
+        dibujarPieBase(pdf, ctx, nombre);
     }
 
     function saltarPaginaSiNecesario(alturaLinea) {
@@ -408,7 +526,7 @@ function dibujarBloques(pdf, bloques, { titulo, logo }) {
 
 /**
  * Genera y GUARDA un PDF a partir de un elemento del DOM ya renderizado, dibujando su contenido (tablas, títulos,
- * pares etiqueta/valor) como texto y tablas vectoriales de verdad, con membrete formal y pie paginado.
+ * pares etiqueta/valor) como texto y tablas vectoriales de verdad, con membrete formal (nombre y logo del sistema, título, fecha) y pie paginado.
  *
  * @param {HTMLElement|string} elementoOSelector - elemento o selector CSS del contenido a exportar.
  * @param {Object} [opciones]
@@ -439,11 +557,11 @@ export async function generarPdfDesdeElemento(elementoOSelector, opciones = {}) 
 /* Dibuja los bloques en un PDF y lo guarda. Común a los PDFs hechos desde el DOM (facturas) y a los armados con datos
    (cartilla digital). */
 async function generarPdfDesdeBloques(bloques, { nombreArchivo, titulo, accion = 'descargar' }) {
-    const [, logo] = await Promise.all([asegurarLibreriasPdf(), cargarLogoPetcore()]);
+    const [, identidad] = await Promise.all([asegurarLibreriasPdf(), cargarIdentidadClinica()]);
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'pt', 'a4');
-    dibujarBloques(pdf, bloques, { titulo, logo });
+    dibujarBloques(pdf, bloques, { titulo, nombre: identidad.nombre, logo: identidad.logo });
 
     // "ver": se abre dentro de la app (visor propio, ver visor_pdf.js). "compartir": hoja de compartir del sistema.
     // "descargar" (por defecto): lo de siempre, abajo.
@@ -591,7 +709,7 @@ export async function generarPdfCartilla({ mascota, propietario, vacunas = [], a
     [
         ['Nombre', mascota.mas_nombre || '—'],
         ['Especie', mascota.nombreEspecie || '—'],
-        ['Raza', mascota.nombreRaza || '—'],
+        ['Raza', mascota.nombreRaza || 'Sin raza'],
         ['Sexo', mascota.mas_genero || '—'],
         ['Fecha de nacimiento', fechaCorta(mascota.mas_fecha_nac)],
         ['Peso', mascota.mas_peso_kg != null ? `${mascota.mas_peso_kg} kg` : 'No registrado'],

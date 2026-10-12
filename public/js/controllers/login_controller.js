@@ -45,6 +45,21 @@ async function iniciarLogin() {
   const verClave = document.getElementById("pcVerClave");
   const textoBotonOriginal = boton.innerHTML;
 
+  // Venimos de "Crear cuenta": el usuario ya viene puesto y se avisa que la cuenta quedó lista.
+  const parametros = new URLSearchParams(window.location.search);
+  if (parametros.get("cuenta") === "creada") {
+    const aviso = document.getElementById("pcLoginAviso");
+    if (aviso) {
+      aviso.textContent = "¡Tu cuenta está lista! Inicia sesión con tu contraseña.";
+      aviso.classList.remove("d-none");
+    }
+    const usuarioNuevo = parametros.get("usuario");
+    if (usuarioNuevo) correo.value = usuarioNuevo;
+    clave.focus();
+    // Limpia la URL para que un "recargar" no repita el aviso
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+
   if (verClave) {
     verClave.addEventListener("click", function () {
       const oculto = clave.type === "password";
@@ -70,12 +85,10 @@ async function iniciarLogin() {
     const correoValor = correo.value.trim();
     const claveValor = clave.value;
 
-    // correo.type="email" ya valida el formato en el navegador, pero como el
-    // form usa "novalidate" + checks manuales, hay que invocar esa misma
-    // validación nativa (checkValidity) en vez de un chequeo débil propio.
+    // El campo acepta correo, nombre de usuario o DUI (el servidor decide cuál es): ya no es type="email".
     correo.value = correoValor;
-    if (!correoValor || !correo.checkValidity()) {
-      mostrarError("Escribe un correo válido, con el que te registraste en la clínica.");
+    if (!correoValor) {
+      mostrarError("Escribe tu correo, tu usuario o tu DUI.");
       correo.focus();
       return;
     }
@@ -101,7 +114,7 @@ async function iniciarLogin() {
         // para correo inexistente o contraseña incorrecta (no distingue
         // cuál de las dos, a propósito, para no filtrar qué correos existen).
         const mensaje = err?.status === 401
-          ? "Correo o contraseña incorrectos."
+          ? "Correo, usuario o contraseña incorrectos."
           : "No se pudo conectar con el servidor. Intenta más tarde.";
         mostrarError(mensaje);
         volverAHabilitar();

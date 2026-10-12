@@ -17,4 +17,9 @@
     <color name="colorPrimary">#2D60A1</color>
     <color name="colorPrimaryDark">#2D60A1</color>
     <color name="colorAccent">#2D60A1</color>
+
+    <!-- Color de acento de las notificaciones push (default_notification_color en el manifest): tiñe el ícono
+         pequeño y el nombre de la app al desplegar la notificación. values-night/colors.xml lo sube a un azul
+         más claro para que se lea sobre el panel oscuro. -->
+    <color name="notificacion_color">#2D60A1</color>
 </resources>

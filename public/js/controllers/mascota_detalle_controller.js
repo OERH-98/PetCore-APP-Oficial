@@ -227,7 +227,7 @@ async function iniciarDetalle() {
           '<i class="fa-solid fa-camera"></i></button>' +
         '<input type="file" accept="image/*" class="d-none" id="pcInputFotoMascota">' +
       "</div>" +
-      '<span class="pc-eyebrow d-block mt-3">' + escaparHtml(m.nombreEspecie || "Especie no indicada") + " · " + escaparHtml(m.nombreRaza || "Raza no indicada") + "</span>" +
+      '<span class="pc-eyebrow d-block mt-3">' + escaparHtml(m.nombreEspecie || "Especie no indicada") + " · " + escaparHtml(m.nombreRaza || "Sin raza") + "</span>" +
       '<h1 class="h3 mt-1 mb-2">' + escaparHtml(m.mas_nombre) + "</h1>" +
       badge(m.mas_estado) +
     "</div>" +

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Modo oscuro: mismo azul que pc-azul del tema oscuro de la app (#5B9BFF). Solo se redefine este color; la barra
+         de estado y el resto de colores de values/colors.xml no cambian. -->
+    <color name="notificacion_color">#5B9BFF</color>
+</resources>

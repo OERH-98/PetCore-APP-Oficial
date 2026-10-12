@@ -11,10 +11,12 @@ import {
     restablecerContraseniaConCodigo
 } from "../services/recuperar_contrasena_service.js";
 import { iniciarSelectorTema, iniciarNavegacionAtras } from "./utils.js";
+import { iniciarContactoClinica } from "../utils/contacto_clinica_utils.js";
 
 document.addEventListener("DOMContentLoaded", function () {
     iniciarSelectorTema(".pc-tema-toggle-btn", "pc_tema_login");
     iniciarNavegacionAtras();
+    iniciarContactoClinica(); // teléfono de la clínica desde la configuración del sistema
 });
 
 function iniciarRecuperarContrasena() {

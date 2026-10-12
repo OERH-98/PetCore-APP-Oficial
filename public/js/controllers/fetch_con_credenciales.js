@@ -75,7 +75,7 @@
     // Páginas donde ya no hay "afuera" al cual mandar a alguien sin sesión
     // (login/recuperación/vinculación de Google son las únicas que un
     // propietario sin sesión puede visitar).
-    const PAGINA_PUBLICA = /\/(login|recuperar_contrasena|vincular_google)\.html(?:$|[?#])/;
+    const PAGINA_PUBLICA = /\/(login|recuperar_contrasena|crear_cuenta|vincular_google)\.html(?:$|[?#])/;
 
     let cerrandoSesion = false;
     function forzarCierreSesion() {

@@ -32,6 +32,7 @@ const PANTALLA_PREVIA = {
   "perfil.html": "dashboard.html",
   // Pantallas sin sesión -> login
   "recuperar_contrasena.html": "login.html",
+  "crear_cuenta.html": "login.html",
   "vincular_google.html": "login.html"
 };
 

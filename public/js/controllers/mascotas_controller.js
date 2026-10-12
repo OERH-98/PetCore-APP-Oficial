@@ -89,7 +89,7 @@ function tarjetaMascota(m, i, ultimaVisita) {
           retrato(m) +
           '<div class="min-w-0">' +
             '<h2 class="h5 mb-1">' + escaparHtml(m.mas_nombre) + "</h2>" +
-            '<p class="pc-meta mb-2">' + escaparHtml(m.nombreRaza || "Raza no indicada") + " · " + edadTexto(soloFecha(m.mas_fecha_nac)) + "</p>" +
+            '<p class="pc-meta mb-2">' + escaparHtml(m.nombreRaza || "Sin raza") + " · " + edadTexto(soloFecha(m.mas_fecha_nac)) + "</p>" +
             badge(m.mas_estado) +
           "</div>" +
         "</div>" +

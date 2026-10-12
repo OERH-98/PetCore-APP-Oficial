@@ -48,18 +48,20 @@
 
       <div class="pc-card p-4">
         <h1 class="h5 mb-1">Inicia sesión</h1>
-        <p class="text-secondary small mb-4">Entra con el usuario que te dieron en recepción.</p>
+        <p class="text-secondary small mb-4">Entra con tu correo, tu usuario o tu DUI.</p>
 
+        <div id="pcLoginAviso" class="alert alert-success py-2 small d-none" role="status"></div>
         <div id="pcLoginError" class="alert alert-danger py-2 small d-none" role="alert"></div>
 
         <form id="pcFormLogin" novalidate>
 
           <div class="mb-3">
-            <label for="pcUsuario" class="form-label">Correo electrónico</label>
+            <label for="pcUsuario" class="form-label">Correo, usuario o DUI</label>
             <div class="input-group">
-              <span class="input-group-text"><i class="fa-solid fa-envelope text-secondary"></i></span>
-              <input type="email" class="form-control" id="pcUsuario" name="correo"
-                     autocomplete="email" placeholder="jperez@correo.com" required>
+              <span class="input-group-text"><i class="fa-solid fa-user text-secondary"></i></span>
+              <input type="text" class="form-control" id="pcUsuario" name="correo"
+                     autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
+                     placeholder="correo, usuario o 00000000-0" required>
             </div>
           </div>
 
@@ -85,12 +87,16 @@
         </div>
         <div id="pcGoogleBtnContenedor" class="d-flex justify-content-center"></div>
 
-        <p class="text-center small text-secondary mt-4 mb-0">
-          <a href="recuperar_contrasena.html" class="text-decoration-none fw-semibold">¿Olvidaste tu contraseña?</a>
-        </p>
-        <p class="text-center small text-secondary mt-1 mb-0">
-          ¿No puedes recuperarla? Llama a la clínica al 2200-1188.
-        </p>
+        <div class="pc-acciones-acceso mt-4">
+          <a href="recuperar_contrasena.html" class="pc-accion-acceso" id="pcBtnOlvide">
+            <i class="fa-solid fa-key" aria-hidden="true"></i>
+            <span>Recuperar contraseña</span>
+          </a>
+          <a href="crear_cuenta.html" class="pc-accion-acceso" id="pcBtnCrearCuenta">
+            <i class="fa-solid fa-id-card" aria-hidden="true"></i>
+            <span>Crear cuenta con DUI</span>
+          </a>
+        </div>
       </div>
 
     </div>

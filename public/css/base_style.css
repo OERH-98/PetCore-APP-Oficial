@@ -46,6 +46,26 @@ h1, h2, h3, h4, h5, h6{
 }
 .pc-dato{ font-variant-numeric: tabular-nums; }
 .pc-meta{ font-size: .85rem; color: var(--pc-texto-suave); }
+/* Enlaces de texto de las pantallas de acceso (olvidé mi contraseña, crear cuenta, teléfono de la clínica): el azul de
+   marca de cada tema en vez del azul por defecto de Bootstrap, que en oscuro se lee apagado. */
+.pc-enlace{ color: var(--pc-azul); }
+.pc-enlace:hover{ color: var(--pc-azul); text-decoration: underline !important; }
+/* Accesos secundarios del login ("Recuperar contraseña" y "Crear cuenta con DUI"): dos botones tonales del mismo
+   tamaño, en fila y con el mismo radio que Acceder/Google, para que todo quede alineado al ancho de la tarjeta.
+   Fondo = --pc-azul-claro de cada tema; al tocarlos se hunden un poco, como un botón nativo. */
+.pc-acciones-acceso{ display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.pc-accion-acceso{
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem;
+  min-height: 4.6rem; padding: .7rem .5rem; border-radius: 10px;
+  background: var(--pc-azul-claro); color: var(--pc-azul);
+  font-size: .85rem; font-weight: 600; line-height: 1.2; text-align: center; text-wrap: balance;
+  text-decoration: none; -webkit-tap-highlight-color: transparent;
+  transition: transform .12s ease, filter .12s ease;
+}
+.pc-accion-acceso i{ font-size: 1.15rem; }
+.pc-accion-acceso:hover{ color: var(--pc-azul); filter: brightness(.97); }
+.pc-accion-acceso:active{ transform: scale(.97); filter: brightness(.93); }
+
 
 /* Foco visible en todo el portal (accesibilidad por teclado) */
 a:focus-visible, button:focus-visible, .btn:focus-visible,
