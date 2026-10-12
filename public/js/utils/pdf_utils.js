@@ -43,7 +43,8 @@ const ENCABEZADO_LOGO_ANCHO_MAX = 150; // un logo muy ancho se achica para no co
 const ENCABEZADO_LOGO_RELLENO = 5;     // margen de la placa azul cuando el logo es blanco
 const ENCABEZADO_LINEA_Y = 66;
 const CONTENIDO_Y_INICIO = 82;
-const PIE_ALTO_RESERVADO = 46; // separación mínima entre el contenido y el pie
+const PIE_ALTO_RESERVADO = 58; // separación mínima entre el contenido y el pie (dos filas)
+const PIE_LOGO_ALTO = 13;      // alto del logo de PetCore en la fila "Generado por"
 
 let promesaLibrerias = null;
 let promesaLogo = null;
@@ -246,22 +247,52 @@ function dibujarEncabezado(pdf, { titulo, nombre, logo, anchoPagina }) {
     pdf.line(MARGEN, ENCABEZADO_LINEA_Y, anchoPagina - MARGEN, ENCABEZADO_LINEA_Y);
 }
 
-// Línea sutil + nombre del sistema a la izquierda -- el número de página se agrega
-// después, en una pasada final (dibujarNumerosPagina), porque el total de
-// páginas no se conoce hasta que TODO el documento ya se dibujó.
-function dibujarPieBase(pdf, { anchoPagina, altoPagina }, nombre) {
+// Pie de cada página, en dos filas bajo una línea sutil:
+//   fila 1:  nombre del sistema (el de Configuración)                                  Página X de Y
+//   fila 2:  Generado por [logo azul de PetCore] · Sistema de gestión veterinaria
+// "Página X de Y" se escribe después, en una pasada final (dibujarNumerosPagina), porque el total de páginas no se
+// conoce hasta que TODO el documento ya se dibujó; va en la misma línea base que la fila 1.
+function dibujarPieBase(pdf, { anchoPagina, altoPagina }, { nombre, logoPetcore }) {
     const lineaY = altoPagina - PIE_ALTO_RESERVADO + 10;
-    const textoY = altoPagina - PIE_ALTO_RESERVADO + 24;
+    const filaNombreY = altoPagina - PIE_ALTO_RESERVADO + 24;   // línea base de la fila 1
+    const filaMarcaY = altoPagina - PIE_ALTO_RESERVADO + 38;    // centro vertical de la fila 2
 
     pdf.setDrawColor(...COLOR_GRIS_LINEA);
     pdf.setLineWidth(0.5);
     pdf.line(MARGEN, lineaY, anchoPagina - MARGEN, lineaY);
 
-    pdf.setFont('helvetica', 'normal');
+    // Fila 1: nombre del sistema (deja libre la derecha para "Página X de Y")
+    pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8);
+    pdf.setTextColor(...COLOR_TEXTO);
+    pdf.text(ajustarTexto(pdf, nombre, anchoPagina - MARGEN * 2 - 90), MARGEN, filaNombreY);
+
+    // Fila 2: "Generado por" + logo de PetCore + descripción. La línea base del texto cae en el centro del logo.
+    const baseTextoY = filaMarcaY + 2.6;
+    let x = MARGEN;
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
     pdf.setTextColor(...COLOR_GRIS_META);
-    // Deja libre la derecha, donde después se escribe "Página X de Y"
-    pdf.text(ajustarTexto(pdf, `${nombre} · Sistema de gestión veterinaria`, anchoPagina - MARGEN * 2 - 90), MARGEN, textoY);
+    pdf.text('Generado por', x, baseTextoY);
+    x += pdf.getTextWidth('Generado por') + 5;
+
+    if (logoPetcore) {
+        const logoAncho = PIE_LOGO_ALTO * logoPetcore.proporcion;
+        // Alias fijo: un único XObject para todas las páginas
+        pdf.addImage(logoPetcore.dataUrl, 'PNG', x, filaMarcaY - PIE_LOGO_ALTO / 2, logoAncho, PIE_LOGO_ALTO, 'logo-petcore-pie');
+        x += logoAncho + 6;
+    } else {
+        // Sin el logo (no cargó): el nombre en texto, para que igual diga qué sistema lo generó
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...COLOR_AZUL_MEDIO);
+        pdf.text('PetCore', x, baseTextoY);
+        x += pdf.getTextWidth('PetCore') + 6;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...COLOR_GRIS_META);
+    }
+
+    pdf.text('·  Sistema de gestión veterinaria', x, baseTextoY);
 }
 
 function dibujarNumerosPagina(pdf, { anchoPagina, altoPagina }) {
@@ -410,7 +441,7 @@ function crearContexto(pdf) {
     };
 }
 
-function dibujarBloques(pdf, bloques, { titulo, nombre, logo }) {
+function dibujarBloques(pdf, bloques, { titulo, nombre, logo, logoPetcore }) {
     const ctx = crearContexto(pdf);
     const paginasConMembrete = new Set();
     let cursorY = CONTENIDO_Y_INICIO;
@@ -420,7 +451,7 @@ function dibujarBloques(pdf, bloques, { titulo, nombre, logo }) {
         if (paginasConMembrete.has(numeroPagina)) return;
         paginasConMembrete.add(numeroPagina);
         dibujarEncabezado(pdf, { titulo, nombre, logo, anchoPagina: ctx.anchoPagina });
-        dibujarPieBase(pdf, ctx, nombre);
+        dibujarPieBase(pdf, ctx, { nombre, logoPetcore });
     }
 
     function saltarPaginaSiNecesario(alturaLinea) {
@@ -557,11 +588,16 @@ export async function generarPdfDesdeElemento(elementoOSelector, opciones = {}) 
 /* Dibuja los bloques en un PDF y lo guarda. Común a los PDFs hechos desde el DOM (facturas) y a los armados con datos
    (cartilla digital). */
 async function generarPdfDesdeBloques(bloques, { nombreArchivo, titulo, accion = 'descargar' }) {
-    const [, identidad] = await Promise.all([asegurarLibreriasPdf(), cargarIdentidadClinica()]);
+    // El logo de PetCore va SIEMPRE en el pie ("Generado por"), aunque el membrete lleve el logo de la clínica.
+    const [, identidad, logoPetcore] = await Promise.all([
+        asegurarLibreriasPdf(),
+        cargarIdentidadClinica(),
+        cargarLogoPetcore().catch(() => null)
+    ]);
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'pt', 'a4');
-    dibujarBloques(pdf, bloques, { titulo, nombre: identidad.nombre, logo: identidad.logo });
+    dibujarBloques(pdf, bloques, { titulo, nombre: identidad.nombre, logo: identidad.logo, logoPetcore });
 
     // "ver": se abre dentro de la app (visor propio, ver visor_pdf.js). "compartir": hoja de compartir del sistema.
     // "descargar" (por defecto): lo de siempre, abajo.
