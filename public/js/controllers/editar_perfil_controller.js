@@ -18,6 +18,7 @@ import { obtenerPropietarioPorId, actualizarParcialPropietario, actualizarPropie
 import { esAppNativa, obtenerIdTokenGoogleNativo } from "../services/login_service.js";
 import { iniciarLayout, requerirSesion, guardarSesion, obtenerSesion, quitarEsqueleto, mostrarToast } from "./utils.js";
 import { crearFechaPersonalizada } from "../utils/fecha_hora_personalizada.js";
+import { iniciarMascaraTelefono, normalizarTelefono } from "../utils/telefono_utils.js";
 
 let propietarioOriginal = null;
 let fotoSeleccionada = null;
@@ -54,7 +55,8 @@ async function cargarDatosActuales(sesion) {
   campos.nombre.value = propietario.pro_nombre || "";
   campos.apellido.value = propietario.pro_apellido || "";
   campos.correo.value = propietario.pro_correo || "";
-  campos.telefono.value = propietario.pro_telefono_movil || "";
+  // Siempre en 0000-0000, aunque la clínica lo haya guardado antes con otro formato (8 dígitos seguidos).
+  campos.telefono.value = normalizarTelefono(propietario.pro_telefono_movil);
   campos.dui.value = propietario.pro_dui || "";
   // Solo se puede elegir hasta hace 18 años (la API exige mayoría de edad); la fecha viene como yyyy-MM-dd
   const hoyMenos18 = new Date();
@@ -280,7 +282,7 @@ function iniciarFormulario(sesion) {
       pro_nombre: document.getElementById("pcEditNombre").value.trim(),
       pro_apellido: document.getElementById("pcEditApellido").value.trim(),
       pro_correo: document.getElementById("pcEditCorreo").value.trim(),
-      pro_telefono_movil: document.getElementById("pcEditTelefono").value.trim(),
+      pro_telefono_movil: normalizarTelefono(document.getElementById("pcEditTelefono").value),
       // null (no "") si se deja vacío: el DTO valida el DUI con un patrón
       // exacto ("00000000-0"), así que un "" ahí rompería la validación en
       // vez de tratarse como "no tengo DUI todavía".
@@ -333,6 +335,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   const sesion = await requerirSesion();
   if (!sesion) return;
 
+  iniciarMascaraTelefono(); // el guion del teléfono (0000-0000) se pone solo
   cargarDatosActuales(sesion);
   iniciarSelectorFoto();
   iniciarFormulario(sesion);

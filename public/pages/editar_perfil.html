@@ -88,8 +88,9 @@
 
       <div class="mb-3">
         <label class="form-label" for="pcEditTelefono">Teléfono móvil</label>
-        <input type="tel" class="form-control skeleton skeleton-texto" id="pcEditTelefono" required maxlength="20">
-        <div class="invalid-feedback">Escribe tu número de teléfono.</div>
+        <input type="tel" class="form-control skeleton skeleton-texto" id="pcEditTelefono" required maxlength="20"
+               placeholder="0000-0000" inputmode="numeric" data-mascara="telefono" pattern="^[0-9]{4}-[0-9]{4}$">
+        <div class="invalid-feedback">El teléfono debe tener el formato 0000-0000.</div>
       </div>
 
       <div class="mb-3">
