@@ -167,8 +167,8 @@ function iniciarRecuperarContrasena() {
         const claveConfirmar = inputClaveConfirmar.value;
         const codigoValor = inputCodigo.value.trim();
 
-        if (claveNueva.length < 8) {
-            mostrarError("La contraseña debe tener al menos 8 caracteres.");
+        if (claveNueva.length < 8 || claveNueva.length > 300) {
+            mostrarError("La contraseña debe tener entre 8 y 300 caracteres.");
             return;
         }
         if (claveNueva !== claveConfirmar) {

@@ -119,19 +119,19 @@
               <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-lock text-secondary"></i></span>
                 <input type="password" class="form-control" id="pcClaveNueva" name="clave"
-                       autocomplete="new-password" placeholder="••••••••" required>
+                       autocomplete="new-password" placeholder="••••••••" minlength="8" maxlength="300" required>
                 <button class="btn btn-outline-secondary" type="button" id="pcVerClaveNueva" aria-label="Mostrar contraseña">
                   <i class="fa-regular fa-eye-slash"></i>
                 </button>
               </div>
-              <div class="form-text">Al menos 8 caracteres.</div>
+              <div class="form-text">Entre 8 y 300 caracteres.</div>
             </div>
             <div class="mb-4">
               <label for="pcClaveConfirmar" class="form-label">Confirmar contraseña</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-lock text-secondary"></i></span>
                 <input type="password" class="form-control" id="pcClaveConfirmar" name="claveConfirmar"
-                       autocomplete="new-password" placeholder="••••••••" required>
+                       autocomplete="new-password" placeholder="••••••••" minlength="8" maxlength="300" required>
               </div>
             </div>
             <button type="submit" class="btn btn-primary btn-lg w-100" id="pcBtnCrearCuenta">Crear cuenta</button>

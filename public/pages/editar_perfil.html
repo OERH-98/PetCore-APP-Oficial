@@ -95,16 +95,16 @@
 
       <div class="mb-3">
         <label class="form-label" for="pcEditDui">DUI</label>
-        <input type="text" class="form-control skeleton skeleton-texto" id="pcEditDui" maxlength="20"
+        <input type="text" class="form-control skeleton skeleton-texto" id="pcEditDui" required maxlength="20"
                placeholder="00000000-0" inputmode="numeric" data-mascara="dui" pattern="^[0-9]{8}-[0-9]$">
-        <div class="invalid-feedback">El DUI debe tener el formato 00000000-0.</div>
+        <div class="invalid-feedback">El DUI es obligatorio y debe tener el formato 00000000-0.</div>
       </div>
 
       <div class="mb-3">
         <label class="form-label" for="pcEditFechaNac">Fecha de nacimiento</label>
-        <input type="date" class="form-control skeleton skeleton-texto" id="pcEditFechaNac">
+        <input type="date" class="form-control skeleton skeleton-texto" id="pcEditFechaNac" required>
         <small class="pc-meta d-block mt-1">Debes ser mayor de edad. Si coincide con el día de hoy, ¡te felicitaremos!</small>
-        <div class="invalid-feedback">Elige una fecha válida.</div>
+        <div class="invalid-feedback">La fecha de nacimiento es obligatoria.</div>
       </div>
 
       <div class="mb-4">

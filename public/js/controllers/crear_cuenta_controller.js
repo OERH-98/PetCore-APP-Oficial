@@ -176,8 +176,8 @@ function iniciarCrearCuenta() {
             inputUsuario.focus();
             return;
         }
-        if (clave.length < 8) {
-            mostrarError("La contraseña debe tener al menos 8 caracteres.");
+        if (clave.length < 8 || clave.length > 300) {
+            mostrarError("La contraseña debe tener entre 8 y 300 caracteres.");
             inputClave.focus();
             return;
         }

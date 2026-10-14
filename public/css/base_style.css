@@ -528,3 +528,14 @@ a:focus-visible, button:focus-visible, .btn:focus-visible,
   background-color: transparent; color: var(--pc-texto-suave);
   opacity: .4; cursor: not-allowed; text-decoration: line-through;
 }
+
+/* Selector de fecha: meses, años y flechas fuera del rango min/max del input
+   (nacimiento: nada después de hace 18 años en la edición del perfil). */
+.pc-fecha-hora-mes:disabled,
+.pc-fecha-hora-anio:disabled,
+.pc-fecha-hora-nav:disabled,
+.pc-fecha-hora-btn-pie:disabled{ opacity: .4; cursor: not-allowed; }
+.pc-fecha-hora-mes:disabled:hover,
+.pc-fecha-hora-anio:disabled:hover,
+.pc-fecha-hora-nav:disabled:hover,
+.pc-fecha-hora-btn-pie:disabled:hover{ background: transparent !important; }

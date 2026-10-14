@@ -167,6 +167,8 @@ export function crearFechaPersonalizada(input, opciones = {}) {
   // la grilla.
   function estaDeshabilitada(fecha) {
     const { min, max } = limites();
+    // Se compara solo el día: "Hoy" llega con hora (new Date()) y quedaba después del máximo "hoy" (00:00)
+    fecha = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
     if ((min && fecha < min) || (max && fecha > max)) return true;
     return typeof opciones.estaDeshabilitada === "function" && !!opciones.estaDeshabilitada(fechaAISO(fecha));
   }
@@ -196,6 +198,12 @@ export function crearFechaPersonalizada(input, opciones = {}) {
     const actual = fechaDesdeISO(input.value);
     const anio = mesVisible.getFullYear();
     const mes = mesVisible.getMonth();
+
+    // Navegación limitada al rango min/max del input: las flechas se apagan en cuanto no queda nada elegible
+    const { min: limiteMin, max: limiteMax } = limites();
+    const sinMesAnterior = !!(limiteMin && new Date(anio, mes, 0) < limiteMin);
+    const sinMesSiguiente = !!(limiteMax && new Date(anio, mes + 1, 1) > limiteMax);
+    const hoyBloqueado = estaDeshabilitada(hoy);
 
     const primerDiaSemana = (new Date(anio, mes, 1).getDay() + 6) % 7;
     const diasEnMes = new Date(anio, mes + 1, 0).getDate();
@@ -228,17 +236,17 @@ export function crearFechaPersonalizada(input, opciones = {}) {
 
     popup.innerHTML = `
       <div class="pc-fecha-hora-cabecera">
-        <button type="button" class="pc-fecha-hora-nav" data-accion="anterior" aria-label="Mes anterior">&#8249;</button>
+        <button type="button" class="pc-fecha-hora-nav" data-accion="anterior" aria-label="Mes anterior" ${sinMesAnterior ? "disabled" : ""}>&#8249;</button>
         <span class="pc-fecha-hora-titulo">
           <button type="button" class="pc-fecha-hora-titulo-parte" data-vista="meses">${MESES[mes]}</button>
           <button type="button" class="pc-fecha-hora-titulo-parte" data-vista="anios">${anio}</button>
         </span>
-        <button type="button" class="pc-fecha-hora-nav" data-accion="siguiente" aria-label="Mes siguiente">&#8250;</button>
+        <button type="button" class="pc-fecha-hora-nav" data-accion="siguiente" aria-label="Mes siguiente" ${sinMesSiguiente ? "disabled" : ""}>&#8250;</button>
       </div>
       <div class="pc-fecha-hora-semana">${DIAS_SEMANA.map(d => `<span>${d}</span>`).join("")}</div>
       <div class="pc-fecha-hora-grilla">${celdas}</div>
       <div class="pc-fecha-hora-pie">
-        <button type="button" class="pc-fecha-hora-btn-pie" data-accion="hoy">Hoy</button>
+        <button type="button" class="pc-fecha-hora-btn-pie" data-accion="hoy" ${hoyBloqueado ? "disabled" : ""}>Hoy</button>
         <button type="button" class="pc-fecha-hora-btn-pie" data-accion="limpiar">Limpiar</button>
       </div>`;
   }
@@ -246,17 +254,22 @@ export function crearFechaPersonalizada(input, opciones = {}) {
   function renderizarMeses() {
     const anio = mesVisible.getFullYear();
     const mesActual = mesVisible.getMonth();
-    const botones = MESES.map((nombre, indice) =>
-      `<button type="button" class="pc-fecha-hora-mes${indice === mesActual ? " pc-fecha-hora-mes--activo" : ""}" data-mes="${indice}">${nombre.slice(0, 3)}</button>`
-    ).join("");
+    const { min: limiteMin, max: limiteMax } = limites();
+    const sinAnioAnterior = !!(limiteMin && new Date(anio - 1, 11, 31) < limiteMin);
+    const sinAnioSiguiente = !!(limiteMax && new Date(anio + 1, 0, 1) > limiteMax);
+    const botones = MESES.map((nombre, indice) => {
+      // Un mes entero fuera del rango min/max no se puede elegir
+      const fuera = !!((limiteMin && new Date(anio, indice + 1, 0) < limiteMin) || (limiteMax && new Date(anio, indice, 1) > limiteMax));
+      return `<button type="button" class="pc-fecha-hora-mes${indice === mesActual ? " pc-fecha-hora-mes--activo" : ""}${fuera ? " pc-fecha-hora-mes--deshabilitado" : ""}" ${fuera ? "disabled" : ""} data-mes="${indice}">${nombre.slice(0, 3)}</button>`;
+    }).join("");
 
     popup.innerHTML = `
       <div class="pc-fecha-hora-cabecera">
-        <button type="button" class="pc-fecha-hora-nav" data-accion="anio-anterior" aria-label="Año anterior">&#8249;</button>
+        <button type="button" class="pc-fecha-hora-nav" data-accion="anio-anterior" aria-label="Año anterior" ${sinAnioAnterior ? "disabled" : ""}>&#8249;</button>
         <span class="pc-fecha-hora-titulo">
           <button type="button" class="pc-fecha-hora-titulo-parte" data-vista="anios">${anio}</button>
         </span>
-        <button type="button" class="pc-fecha-hora-nav" data-accion="anio-siguiente" aria-label="Año siguiente">&#8250;</button>
+        <button type="button" class="pc-fecha-hora-nav" data-accion="anio-siguiente" aria-label="Año siguiente" ${sinAnioSiguiente ? "disabled" : ""}>&#8250;</button>
       </div>
       <div class="pc-fecha-hora-grilla-meses">${botones}</div>`;
   }
@@ -264,17 +277,22 @@ export function crearFechaPersonalizada(input, opciones = {}) {
   function renderizarAnios() {
     const base2 = Math.floor(mesVisible.getFullYear() / 12) * 12;
     const anioActual = mesVisible.getFullYear();
+    const { min: limiteMin, max: limiteMax } = limites();
+    const sinDecadaAnterior = !!(limiteMin && new Date(base2 - 1, 11, 31) < limiteMin);
+    const sinDecadaSiguiente = !!(limiteMax && new Date(base2 + 12, 0, 1) > limiteMax);
     let botones = "";
     for (let i = 0; i < 12; i++) {
       const anio = base2 + i;
-      botones += `<button type="button" class="pc-fecha-hora-anio${anio === anioActual ? " pc-fecha-hora-anio--activo" : ""}" data-anio="${anio}">${anio}</button>`;
+      // Un año entero fuera del rango min/max no se puede elegir (p. ej. nacimiento: nada después de hace 18 años)
+      const fuera = !!((limiteMin && new Date(anio, 11, 31) < limiteMin) || (limiteMax && new Date(anio, 0, 1) > limiteMax));
+      botones += `<button type="button" class="pc-fecha-hora-anio${anio === anioActual ? " pc-fecha-hora-anio--activo" : ""}${fuera ? " pc-fecha-hora-anio--deshabilitado" : ""}" ${fuera ? "disabled" : ""} data-anio="${anio}">${anio}</button>`;
     }
 
     popup.innerHTML = `
       <div class="pc-fecha-hora-cabecera">
-        <button type="button" class="pc-fecha-hora-nav" data-accion="decada-anterior" aria-label="12 años antes">&#8249;</button>
+        <button type="button" class="pc-fecha-hora-nav" data-accion="decada-anterior" aria-label="12 años antes" ${sinDecadaAnterior ? "disabled" : ""}>&#8249;</button>
         <span class="pc-fecha-hora-titulo">${base2} - ${base2 + 11}</span>
-        <button type="button" class="pc-fecha-hora-nav" data-accion="decada-siguiente" aria-label="12 años después">&#8250;</button>
+        <button type="button" class="pc-fecha-hora-nav" data-accion="decada-siguiente" aria-label="12 años después" ${sinDecadaSiguiente ? "disabled" : ""}>&#8250;</button>
       </div>
       <div class="pc-fecha-hora-grilla-anios">${botones}</div>`;
   }
