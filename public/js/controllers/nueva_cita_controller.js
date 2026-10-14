@@ -26,6 +26,8 @@ import { iniciarLayout, requerirSesion, dinero, soloFecha, esFechaFeriado, mostr
 import { crearSelectPersonalizado } from "../utils/selector_personalizado.js";
 import { crearFechaPersonalizada, crearHoraPersonalizada } from "../utils/fecha_hora_personalizada.js";
 
+import { avisarCampo, iniciarAvisosFormulario } from "../utils/avisos_formulario.js";
+iniciarAvisosFormulario();
 // Hora actual del teléfono ("HH:mm") y fecha de hoy ("yyyy-MM-dd"), ambas locales (no UTC).
 function horaActualHHmm() {
   const d = new Date();
@@ -348,18 +350,18 @@ async function iniciarNuevaCita() {
     }
 
     if (esFechaFeriado(feriados, fecha.value)) {
-      mostrarToast("warning", "Ese día es feriado y la clínica no atiende. Elige otra fecha.");
+      avisarCampo(fecha, "Ese día es feriado y la clínica no atiende. Elige otra fecha.");
       return;
     }
 
     if (esHoraPasada(fecha.value, hora.value)) {
-      mostrarToast("warning", "Esa hora ya pasó (ahora son las " + horaActualHHmm() + "). Elige una hora posterior.");
+      avisarCampo(hora, "Esa hora ya pasó (ahora son las " + horaActualHHmm() + "). Elige una hora posterior.");
       return;
     }
 
     const vet = asignarVeterinario(empleados, citas, fecha.value, hora.value);
     if (!vet) {
-      mostrarToast("warning", "No hay veterinarios disponibles a esa hora. Elige otro horario.");
+      avisarCampo(hora, "No hay veterinarios disponibles a esa hora. Elige otro horario.");
       return;
     }
 

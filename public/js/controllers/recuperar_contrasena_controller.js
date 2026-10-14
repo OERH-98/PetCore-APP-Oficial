@@ -13,6 +13,7 @@ import {
 import { iniciarSelectorTema, iniciarNavegacionAtras } from "./utils.js";
 import { iniciarContactoClinica } from "../utils/contacto_clinica_utils.js";
 
+import { avisarCampo } from "../utils/avisos_formulario.js";
 document.addEventListener("DOMContentLoaded", function () {
     iniciarSelectorTema(".pc-tema-toggle-btn", "pc_tema_login");
     iniciarNavegacionAtras();
@@ -88,8 +89,8 @@ function iniciarRecuperarContrasena() {
         const correoValor = inputCorreo.value.trim();
         inputCorreo.value = correoValor;
         if (!correoValor || !inputCorreo.checkValidity()) {
-            mostrarError("Escribe un correo válido.");
-            inputCorreo.focus();
+            ocultarError();
+            avisarCampo(inputCorreo, "Escribe un correo válido.");
             return;
         }
 
@@ -168,11 +169,13 @@ function iniciarRecuperarContrasena() {
         const codigoValor = inputCodigo.value.trim();
 
         if (claveNueva.length < 8 || claveNueva.length > 300) {
-            mostrarError("La contraseña debe tener entre 8 y 300 caracteres.");
+            ocultarError();
+            avisarCampo(inputClaveNueva, "La contraseña debe tener entre 8 y 300 caracteres.");
             return;
         }
         if (claveNueva !== claveConfirmar) {
-            mostrarError("Las contraseñas no coinciden.");
+            ocultarError();
+            avisarCampo(inputClaveConfirmar, "Las contraseñas no coinciden.");
             return;
         }
 

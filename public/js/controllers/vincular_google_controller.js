@@ -16,6 +16,7 @@
 import { loginPropietarioConGoogle } from "../services/login_service.js";
 import { obtenerSesionVerificada, iniciarSelectorTema, iniciarNavegacionAtras } from "./utils.js";
 
+import { avisarCampo } from "../utils/avisos_formulario.js";
 const CLAVE_IDTOKEN = "pc_google_vinculacion_idtoken";
 const CLAVE_MENSAJE = "pc_google_vinculacion_mensaje";
 
@@ -72,8 +73,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     const claveValor = clave.value;
     if (!claveValor) {
-      mostrarError("Escribe tu contraseña actual.");
-      clave.focus();
+      error.classList.add("d-none"); avisarCampo(clave, "Escribe tu contraseña actual.");
       return;
     }
 

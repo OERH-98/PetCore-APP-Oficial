@@ -14,6 +14,7 @@ import { iniciarSelectorTema, iniciarNavegacionAtras } from "./utils.js";
 import { iniciarContactoClinica } from "../utils/contacto_clinica_utils.js";
 import { iniciarMascaraDui, normalizarDui, esDuiValido } from "../utils/dui_utils.js";
 
+import { avisarCampo } from "../utils/avisos_formulario.js";
 document.addEventListener("DOMContentLoaded", function () {
     iniciarSelectorTema(".pc-tema-toggle-btn", "pc_tema_login");
     iniciarNavegacionAtras();
@@ -87,8 +88,7 @@ function iniciarCrearCuenta() {
         const duiValor = normalizarDui(inputDui.value);
         inputDui.value = duiValor;
         if (!esDuiValido(duiValor)) {
-            mostrarError("Escribe tu DUI completo (8 dígitos, guion y 1 dígito).");
-            inputDui.focus();
+            ocultarError(); avisarCampo(inputDui, "Escribe tu DUI completo (8 dígitos, guion y 1 dígito).");
             return;
         }
 
@@ -167,23 +167,19 @@ function iniciarCrearCuenta() {
         const codigoValor = inputCodigo.value.trim();
 
         if (usuario.length < 4 || usuario.length > 15) {
-            mostrarError("El nombre de usuario debe tener entre 4 y 15 caracteres.");
-            inputUsuario.focus();
+            ocultarError(); avisarCampo(inputUsuario, "El nombre de usuario debe tener entre 4 y 15 caracteres.");
             return;
         }
         if (!/^[A-Za-z0-9._-]+$/.test(usuario)) {
-            mostrarError("El nombre de usuario solo puede tener letras, números, punto, guion y guion bajo.");
-            inputUsuario.focus();
+            ocultarError(); avisarCampo(inputUsuario, "El nombre de usuario solo puede tener letras, números, punto, guion y guion bajo.");
             return;
         }
         if (clave.length < 8 || clave.length > 300) {
-            mostrarError("La contraseña debe tener entre 8 y 300 caracteres.");
-            inputClave.focus();
+            ocultarError(); avisarCampo(inputClave, "La contraseña debe tener entre 8 y 300 caracteres.");
             return;
         }
         if (clave !== confirmar) {
-            mostrarError("Las contraseñas no coinciden.");
-            inputConfirmar.focus();
+            ocultarError(); avisarCampo(inputConfirmar, "Las contraseñas no coinciden.");
             return;
         }
 

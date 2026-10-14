@@ -18,6 +18,7 @@ import {
   quitarEsqueleto, escaparHtml, alertar
 } from "./utils.js";
 
+import { avisarCampo } from "../utils/avisos_formulario.js";
 function iniciarPestanias() {
   const botones = Array.prototype.slice.call(document.querySelectorAll("#pcTabs [data-bs-toggle='tab']"));
   if (!botones.length) return;
@@ -111,11 +112,11 @@ function iniciarCambioFotoMascota(mascota) {
     if (!archivo) return;
 
     if (!archivo.type.startsWith("image/")) {
-      alertar({ icon: "warning", title: "Archivo no válido", text: "Elige una imagen (JPG, PNG...)." });
+      avisarCampo(input, "Elige una imagen (JPG, PNG...).");
       return;
     }
     if (archivo.size > TAMANO_MAXIMO) {
-      alertar({ icon: "warning", title: "Imagen muy pesada", text: "La foto no puede pesar más de 10 MB." });
+      avisarCampo(input, "La foto no puede pesar más de 10 MB.");
       return;
     }
 

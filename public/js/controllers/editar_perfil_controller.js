@@ -21,6 +21,8 @@ import { crearFechaPersonalizada } from "../utils/fecha_hora_personalizada.js";
 import { iniciarMascaraTelefono, normalizarTelefono } from "../utils/telefono_utils.js";
 import { iniciarMascaraDui, normalizarDui } from "../utils/dui_utils.js";
 
+import { avisarCampo, iniciarAvisosFormulario } from "../utils/avisos_formulario.js";
+iniciarAvisosFormulario();
 let propietarioOriginal = null;
 let fotoSeleccionada = null;
 
@@ -163,7 +165,7 @@ function iniciarDesvincularGoogle(sesion) {
     if (tieneContrasenia()) {
       if (!inputContrasenia.value) {
         form.classList.add("was-validated");
-        inputContrasenia.focus();
+        avisarCampo(inputContrasenia, "Escribe tu contraseña actual para desvincular tu cuenta de Google.");
         return;
       }
       datos = { contrasenia: inputContrasenia.value };
@@ -175,7 +177,8 @@ function iniciarDesvincularGoogle(sesion) {
       inputConfirma.setCustomValidity(inputNueva.value === inputConfirma.value ? "" : "No coinciden");
       if (!form.checkValidity() || inputNueva.value.length < 8) {
         form.classList.add("was-validated");
-        (inputNueva.value.length < 8 ? inputNueva : inputConfirma).focus();
+        if (inputNueva.value.length < 8) avisarCampo(inputNueva, "La contraseña debe tener entre 8 y 300 caracteres.");
+        else avisarCampo(inputConfirma, inputConfirma.value ? "Las contraseñas no coinciden." : "Confirma la nueva contraseña.");
         return;
       }
     }
@@ -239,7 +242,7 @@ function iniciarSelectorFoto() {
     if (!archivo) return;
 
     if (!archivo.type.startsWith("image/")) {
-      mostrarToast("warning", "Elige un archivo de imagen válido.");
+      avisarCampo(input, "Elige un archivo de imagen válido (JPG, PNG, WEBP...).");
       input.value = "";
       return;
     }

@@ -17,6 +17,7 @@
 import { loginPropietario, loginPropietarioConGoogle, GOOGLE_CLIENT_ID, esAppNativa, obtenerIdTokenGoogleNativo } from "../services/login_service.js";
 import { obtenerSesionVerificada, iniciarSelectorTema, iniciarNavegacionAtras } from "./utils.js";
 
+import { avisarCampo } from "../utils/avisos_formulario.js";
 /* Toggle de tema propio de login.html: pantalla "fuera de la app", así que
    usa su propia preferencia global (pc_tema_login) en vez de una por
    propietario -- todavía no hay sesión en este punto. index.html hereda
@@ -88,14 +89,12 @@ async function iniciarLogin() {
     // El campo acepta correo, nombre de usuario o DUI (el servidor decide cuál es): ya no es type="email".
     correo.value = correoValor;
     if (!correoValor) {
-      mostrarError("Escribe tu correo, tu usuario o tu DUI.");
-      correo.focus();
+      error.classList.add("d-none"); avisarCampo(correo, "Escribe tu correo, tu usuario o tu DUI.");
       return;
     }
 
     if (!claveValor) {
-      mostrarError("Escribe tu contraseña.");
-      clave.focus();
+      error.classList.add("d-none"); avisarCampo(clave, "Escribe tu contraseña.");
       return;
     }
 

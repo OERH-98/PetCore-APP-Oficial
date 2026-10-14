@@ -11,6 +11,7 @@
 import { verificarContraseniaPropietario, cambiarContraseniaPropietario } from "../services/propietarios_service.js";
 import { iniciarLayout, requerirSesion } from "./utils.js";
 
+import { avisarCampo } from "../utils/avisos_formulario.js";
 function iniciarTogglePassword(inputId, botonId) {
   const input = document.getElementById(inputId);
   const boton = document.getElementById(botonId);
@@ -53,7 +54,7 @@ function iniciarCambioContrasena(sesion) {
 
     const actual = document.getElementById("pcContrasenaActual").value;
     if (!actual) {
-      mostrarError(errorVerificar, "Escribe tu contraseña actual");
+      avisarCampo("pcContrasenaActual", "Escribe tu contraseña actual.");
       return;
     }
 
@@ -89,11 +90,11 @@ function iniciarCambioContrasena(sesion) {
     const confirmar = document.getElementById("pcContrasenaConfirmar").value;
 
     if (nueva.length < 8 || nueva.length > 300) {
-      mostrarError(errorNueva, "La contraseña debe tener entre 8 y 300 caracteres");
+      avisarCampo("pcContrasenaNueva", "La contraseña debe tener entre 8 y 300 caracteres.");
       return;
     }
     if (nueva !== confirmar) {
-      mostrarError(errorNueva, "Las contraseñas no coinciden");
+      avisarCampo("pcContrasenaConfirmar", "Las contraseñas no coinciden.");
       return;
     }
 
