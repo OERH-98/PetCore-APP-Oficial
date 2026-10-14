@@ -12,18 +12,13 @@ import {
 } from "../services/crear_cuenta_service.js";
 import { iniciarSelectorTema, iniciarNavegacionAtras } from "./utils.js";
 import { iniciarContactoClinica } from "../utils/contacto_clinica_utils.js";
+import { iniciarMascaraDui, normalizarDui, esDuiValido } from "../utils/dui_utils.js";
 
 document.addEventListener("DOMContentLoaded", function () {
     iniciarSelectorTema(".pc-tema-toggle-btn", "pc_tema_login");
     iniciarNavegacionAtras();
     iniciarContactoClinica(); // teléfono de la clínica desde la configuración del sistema
 });
-
-// "012345678" -> "01234567-8": solo dígitos, con el guion antes del último
-function formatearDui(texto) {
-    const digitos = String(texto || "").replace(/\D/g, "").slice(0, 9);
-    return digitos.length > 8 ? digitos.slice(0, 8) + "-" + digitos.slice(8) : digitos;
-}
 
 function iniciarCrearCuenta() {
     const pasoDui = document.getElementById("pcPasoDui");
@@ -73,10 +68,8 @@ function iniciarCrearCuenta() {
         });
     }
 
-    // --- DUI con el guion puesto solo ---
-    inputDui.addEventListener("input", function () {
-        inputDui.value = formatearDui(inputDui.value);
-    });
+    // --- DUI con el guion puesto solo (data-mascara="dui" en el HTML): solo dígitos ---
+    iniciarMascaraDui();
 
     // --- Ver/ocultar la contraseña ---
     const btnVerClave = document.getElementById("pcVerClaveNueva");
@@ -91,9 +84,9 @@ function iniciarCrearCuenta() {
     // --- Paso 1: pedir el código con el DUI ---
     formDui.addEventListener("submit", function (evento) {
         evento.preventDefault();
-        const duiValor = formatearDui(inputDui.value);
+        const duiValor = normalizarDui(inputDui.value);
         inputDui.value = duiValor;
-        if (!/^\d{8}-\d$/.test(duiValor)) {
+        if (!esDuiValido(duiValor)) {
             mostrarError("Escribe tu DUI completo (8 dígitos, guion y 1 dígito).");
             inputDui.focus();
             return;

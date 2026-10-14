@@ -19,6 +19,7 @@ import { esAppNativa, obtenerIdTokenGoogleNativo } from "../services/login_servi
 import { iniciarLayout, requerirSesion, guardarSesion, obtenerSesion, quitarEsqueleto, mostrarToast } from "./utils.js";
 import { crearFechaPersonalizada } from "../utils/fecha_hora_personalizada.js";
 import { iniciarMascaraTelefono, normalizarTelefono } from "../utils/telefono_utils.js";
+import { iniciarMascaraDui, normalizarDui } from "../utils/dui_utils.js";
 
 let propietarioOriginal = null;
 let fotoSeleccionada = null;
@@ -57,7 +58,7 @@ async function cargarDatosActuales(sesion) {
   campos.correo.value = propietario.pro_correo || "";
   // Siempre en 0000-0000, aunque la clínica lo haya guardado antes con otro formato (8 dígitos seguidos).
   campos.telefono.value = normalizarTelefono(propietario.pro_telefono_movil);
-  campos.dui.value = propietario.pro_dui || "";
+  campos.dui.value = normalizarDui(propietario.pro_dui);
   // Solo se puede elegir hasta hace 18 años (la API exige mayoría de edad); la fecha viene como yyyy-MM-dd
   const hoyMenos18 = new Date();
   hoyMenos18.setFullYear(hoyMenos18.getFullYear() - 18);
@@ -286,7 +287,7 @@ function iniciarFormulario(sesion) {
       // null (no "") si se deja vacío: el DTO valida el DUI con un patrón
       // exacto ("00000000-0"), así que un "" ahí rompería la validación en
       // vez de tratarse como "no tengo DUI todavía".
-      pro_dui: document.getElementById("pcEditDui").value.trim() || null,
+      pro_dui: normalizarDui(document.getElementById("pcEditDui").value) || null,
       pro_lugar_residencia: document.getElementById("pcEditDireccion").value.trim(),
       // Solo se manda si hay fecha (yyyy-MM-dd); la API valida que sea mayor de edad
       ...(document.getElementById("pcEditFechaNac").value ? { pro_fecha_nac: document.getElementById("pcEditFechaNac").value } : {})
@@ -336,6 +337,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (!sesion) return;
 
   iniciarMascaraTelefono(); // el guion del teléfono (0000-0000) se pone solo
+  iniciarMascaraDui(); // el guion del DUI (00000000-0) se pone solo
   cargarDatosActuales(sesion);
   iniciarSelectorFoto();
   iniciarFormulario(sesion);

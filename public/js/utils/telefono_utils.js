@@ -41,6 +41,8 @@ export function formatearTelefono(valor, { borrando = false } = {}) {
 export function normalizarTelefono(valor) {
     const texto = String(valor ?? "").trim();
     if (!texto) return "";
+    // Con letras u otros símbolos no se "arregla" nada: se deja tal cual para que falle la validación.
+    if (/[^0-9\s+()-]/.test(texto)) return texto;
     // Sin recortar: un número con más (o menos) de 8 dígitos no se "arregla" a la fuerza, se deja para que falle la validación.
     const digitos = extraerDigitosCompletos(texto);
     return digitos.length === 8 ? digitos.slice(0, 4) + "-" + digitos.slice(4) : texto;
