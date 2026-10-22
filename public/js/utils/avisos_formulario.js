@@ -29,6 +29,7 @@ let temporizador = null;
 
 let globo = null;
 let objetivoGlobo = null;
+let objetivoControl = null;
 let globoSinAncla = false;
 let temporizadorOcultar = null;
 let marcados = [];
@@ -257,17 +258,46 @@ function mensajeDelCampo(control) {
 /* ------------------------------------------------------------------ marcas */
 
 function quitarMarcas() {
-    marcados.forEach(el => el.classList.remove(CLASE_MARCA));
+    marcados.forEach(m => m.visible.classList.remove(CLASE_MARCA));
     marcados = [];
 }
 
-function marcar(elemento) {
-    if (!elemento || !elemento.classList) return;
-    elemento.classList.add(CLASE_MARCA);
-    marcados.push(elemento);
-    const limpiar = () => elemento.classList.remove(CLASE_MARCA);
-    elemento.addEventListener("input", limpiar, { once: true });
-    elemento.addEventListener("change", limpiar, { once: true });
+/** Marca en rojo el elemento visible. "control" es el campo original (puede estar oculto tras un selector). */
+function marcar(visible, control) {
+    if (!visible || !visible.classList) return;
+    visible.classList.add(CLASE_MARCA);
+    marcados.push({ visible, control: control || visible });
+}
+
+/** Quita la marca roja (y el globo) en cuanto la persona cambia ese campo, sea el visible o el original oculto. */
+function limpiarMarcaDe(evento) {
+    const t = evento.target;
+    if (!(t instanceof Node)) return;
+    if (marcados.length) {
+        marcados = marcados.filter(m => {
+            const afecta = t === m.visible || t === m.control || (m.visible.contains && m.visible.contains(t));
+            if (afecta) m.visible.classList.remove(CLASE_MARCA);
+            return !afecta;
+        });
+    }
+    if (globo && objetivoGlobo && (t === objetivoGlobo || t === objetivoControl || (objetivoGlobo.contains && objetivoGlobo.contains(t)))) {
+        ocultarGlobo();
+    }
+}
+
+/** Al salir del campo, si el original ya tiene valor (lo completaron con un selector), deja de estar en rojo. */
+function revisarMarcasAlSalir(evento) {
+    const t = evento.target;
+    if (!(t instanceof Node) || !marcados.length) return;
+    marcados = marcados.filter(m => {
+        const afecta = t === m.visible || t === m.control;
+        if (afecta && m.control && typeof m.control.value === "string" && m.control.value.trim() !== "" &&
+            m.control.checkValidity && m.control.validity.valueMissing === false && m.control.type !== "checkbox") {
+            m.visible.classList.remove(CLASE_MARCA);
+            return false;
+        }
+        return true;
+    });
 }
 
 /* ------------------------------------------------------------------- globo */
@@ -278,6 +308,7 @@ function ocultarGlobo() {
     const actual = globo;
     globo = null;
     objetivoGlobo = null;
+    objetivoControl = null;
     globoSinAncla = false;
     if (!actual) return;
     actual.classList.remove("pc-globo-visible");
@@ -341,7 +372,7 @@ function mostrarGlobo(controles, opciones = {}) {
     });
     if (!unicos.length && opciones.mensajeHtml === undefined) return;
 
-    unicos.forEach(({ visible }) => marcar(visible));
+    unicos.forEach(({ control, visible }) => marcar(visible, control));
 
     const primero = unicos[0] || { control: null, visible: null };
     const otros = opciones.mensajeHtml !== undefined ? [] : unicos.slice(1).map(u => nombreDelCampo(u.control));
@@ -364,6 +395,7 @@ function mostrarGlobo(controles, opciones = {}) {
         </div>`;
     document.body.appendChild(globo);
     objetivoGlobo = primero.visible;
+    objetivoControl = primero.control || null;
     globoSinAncla = !objetivoGlobo;
 
     if (objetivoGlobo) {
@@ -374,8 +406,6 @@ function mostrarGlobo(controles, opciones = {}) {
 
     if (objetivoGlobo) {
         try { objetivoGlobo.focus({ preventScroll: true }); } catch (e) { /* no enfocable */ }
-        objetivoGlobo.addEventListener("input", ocultarGlobo, { once: true });
-        objetivoGlobo.addEventListener("change", ocultarGlobo, { once: true });
     }
     temporizadorOcultar = setTimeout(ocultarGlobo, SEGUNDOS_VISIBLE * 1000);
 }
@@ -394,6 +424,11 @@ function iniciarEscuchasDelGlobo() {
     if (escuchasListas) return;
     escuchasListas = true;
     inyectarEstilos();
+
+    // Cualquier cambio del campo marcado (o de su original oculto) limpia el rojo y el globo
+    document.addEventListener("input", limpiarMarcaDe, true);
+    document.addEventListener("change", limpiarMarcaDe, true);
+    document.addEventListener("focusout", revisarMarcasAlSalir, true);
 
     // El globo sigue a su campo si la página o un panel se desplaza / cambia de tamaño
     window.addEventListener("scroll", posicionarGlobo, true);

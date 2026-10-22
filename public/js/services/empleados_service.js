@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/empleados";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/empleados";
 
 // Usado por nueva_cita.html para asignar automáticamente un veterinario
 // disponible en el turno elegido -- ver asignarVeterinario() en

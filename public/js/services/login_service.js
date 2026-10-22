@@ -14,9 +14,9 @@
    ========================================================================== */
 import { marcarCierreDeSesion, limpiarMarcaCierreDeSesion } from "./sesion_service.js";
 
-const API_URL_LOGIN = "https://petcore-8afada45fabc.herokuapp.com/api/auth/login/propietario";
-const API_URL_LOGIN_GOOGLE = "https://petcore-8afada45fabc.herokuapp.com/api/auth/login/propietario/google";
-const API_URL_LOGOUT = "https://petcore-8afada45fabc.herokuapp.com/api/auth/logout";
+const API_URL_LOGIN = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/auth/login/propietario";
+const API_URL_LOGIN_GOOGLE = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/auth/login/propietario/google";
+const API_URL_LOGOUT = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/auth/logout";
 
 // Debe ser EXACTAMENTE el mismo Client ID que GOOGLE_OAUTH_CLIENT_ID en el
 // .env de Auth_API -- ahí es donde de verdad se valida como "audience" del
@@ -93,7 +93,7 @@ export async function logout() {
             ? (window.Capacitor.Plugins?.CapacitorCookies || window.Capacitor.registerPlugin?.("CapacitorCookies"))
             : null;
         if (cookies) {
-            await cookies.deleteCookie?.({ url: "https://petcore-8afada45fabc.herokuapp.com", key: "authTokenPropietario" }).catch(() => {});
+            await cookies.deleteCookie?.({ url: "https://site--backend-petcore--qfjc54hbttpk.code.run", key: "authTokenPropietario" }).catch(() => {});
             await cookies.clearAllCookies?.().catch(() => {});
         }
     } catch (error) {

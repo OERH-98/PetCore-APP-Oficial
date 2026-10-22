@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/cuidados";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/cuidados";
 
 export async function obtenerCuidadosDeMascota(masId) {
     try {

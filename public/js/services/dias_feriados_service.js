@@ -6,7 +6,7 @@
    -- este service solo trae la lista para deshabilitar esas fechas al
    agendar una cita, ver nueva_cita_controller.js.
    ========================================================================== */
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/dias_feriados";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/dias_feriados";
 
 export async function obtenerDiasFeriados() {
     try {

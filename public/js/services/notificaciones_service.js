@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/notificaciones_destinatarios";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/notificaciones_destinatarios";
 
 // GET /api/notificaciones_destinatarios/propietario/{proId}/leida/0 — solo las
 // notificaciones no leídas del propietario logueado.

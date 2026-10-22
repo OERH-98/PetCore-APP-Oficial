@@ -19,7 +19,7 @@
   "use strict";
   if (window.SesionTempranaService) return;
 
-  var API_URL_ME = "https://petcore-8afada45fabc.herokuapp.com/api/auth/me/propietario";
+  var API_URL_ME = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/auth/me/propietario";
 
   // Mismo truco que fetch_con_credenciales.js, pero para XHR: si la página se
   // sirve desde 127.0.0.1 (Live Server) en vez de localhost, se apunta el XHR

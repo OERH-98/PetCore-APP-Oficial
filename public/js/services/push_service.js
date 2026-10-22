@@ -5,7 +5,7 @@
    push_utils.js (Web Push + Service Worker) usa este service en vez de
    hacer fetch() directo, igual que el resto de la app.
    ========================================================================== */
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/push";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/push";
 
 // GET /api/push/vapid-public-key -- pública por diseño del propio estándar
 // Web Push (es la mitad pública del par VAPID), no requiere sesión.

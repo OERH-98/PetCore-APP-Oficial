@@ -1,7 +1,7 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/propietarios";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/propietarios";
 // Contraseña (verificar/cambiar) vive en API_Auth_PetCore, no en la API
 // principal -- ver ContraseniaController ahí.
-const API_URL_AUTH_PROPIETARIO = "https://petcore-8afada45fabc.herokuapp.com/api/auth/propietario";
+const API_URL_AUTH_PROPIETARIO = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/auth/propietario";
 
 // POST /api/auth/propietario/{id}/verificar-contrasenia (API_Auth_PetCore)
 // -- primer paso del cambio de contraseña autoservicio. Lanza error si la

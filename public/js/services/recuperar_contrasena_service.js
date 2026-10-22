@@ -6,7 +6,7 @@
    ahí), pero contra /recuperar/propietario en vez de /recuperar/empleado.
    Auth_API guarda el código SOLO en memoria, no en la base de datos.
    ========================================================================== */
-const API_URL_BASE = "https://petcore-8afada45fabc.herokuapp.com/api/auth/recuperar/propietario";
+const API_URL_BASE = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/auth/recuperar/propietario";
 
 async function leerError(respuesta, mensajePorDefecto) {
     const cuerpo = await respuesta.json().catch(() => null);

@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/cfgs_sistema";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/cfgs_sistema";
 
 export async function obtenerConfiguracionSistema() {
     try {

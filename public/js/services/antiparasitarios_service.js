@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/antiparasitarios";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/antiparasitarios";
 
 // GET /api/antiparasitarios/por_mascota/{id} — usado por Notificaciones
 // para el recordatorio de próxima aplicación.

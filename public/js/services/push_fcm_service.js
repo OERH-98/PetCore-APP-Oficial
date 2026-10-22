@@ -6,7 +6,7 @@
    usa este service en vez de hacer fetch() directo, igual que el resto de
    la app.
    ========================================================================== */
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/push_fcm";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/push_fcm";
 
 // POST /api/push_fcm/token -- upsert por (token, dueño actual), ver
 // PushTokenFcmService.registrar en el backend.

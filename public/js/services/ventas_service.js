@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/ventas";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/ventas";
 
 // GET /api/ventas/por_propietario/{id} — facturas de un propietario específico
 export async function obtenerVentasPorPropietario(proId) {

@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/evoluciones_clinicas";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/evoluciones_clinicas";
 
 // GET /api/evolucion_clinica/por_hospitalizacion/{id} — usado por
 // Notificaciones para avisar de una evolución clínica nueva durante un

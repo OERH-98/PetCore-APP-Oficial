@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/hospitalizaciones";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/hospitalizaciones";
 
 // GET /api/hospitalizaciones/por_mascota/{id} — usado por Notificaciones
 // para saber si una mascota propia está (o estuvo) internada y así poder

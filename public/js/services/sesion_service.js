@@ -14,7 +14,7 @@
    peticiones asíncronas, así que la versión síncrona ahí SIEMPRE devuelve
    "sin sesión" aunque la cookie sea válida.
    ========================================================================== */
-const API_URL_PROPIETARIOS = "https://petcore-8afada45fabc.herokuapp.com/api/propietarios";
+const API_URL_PROPIETARIOS = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/propietarios";
 
 /* Marca de "cerré sesión en este dispositivo". En iOS (WKWebView + CapacitorHttp) la cookie httpOnly de sesión
    a veces NO se borra con el Set-Cookie de /api/auth/logout; sin esta marca, login.html volvía a verla válida y

@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/mascotas";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/mascotas";
 
 // PUT /api/mascotas/{id}/foto (multipart "foto") — el propietario cambia SOLO la foto de su mascota.
 // Devuelve la mascota actualizada (con mas_foto_url nueva).

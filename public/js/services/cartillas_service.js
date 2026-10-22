@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/cartillas";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/cartillas";
 
 // GET /api/cartillas/por_mascota/{id} — vacunas de una mascota (usado por
 // Notificaciones para el recordatorio de refuerzo próximo a vencer).

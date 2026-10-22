@@ -19,7 +19,7 @@
    reconecta. Al volver a conectar se emite el evento sintético
    "WS_RECONECTADO" para que las páginas revaliden lo que se perdió.
    ========================================================================== */
-const WS_URL = "wss://petcore-8afada45fabc.herokuapp.com/ws";
+const WS_URL = "wss://site--backend-petcore--qfjc54hbttpk.code.run/ws";
 
 const INTERVALO_PING_MS = 25000;
 const TIMEOUT_PONG_MS = 10000;
@@ -29,7 +29,7 @@ const REINTENTO_MAX_MS = 30000;
 // Mismo truco que fetch_con_credenciales.js/sesion_service.js, pero para el
 // WebSocket: si esta página no se sirve desde "localhost" (Live Server en
 // 127.0.0.1, o el celular de verdad entrando por la IP de la LAN -- el caso
-// que de verdad importa en un portal "mobile"), "wss://petcore-8afada45fabc.herokuapp.com/ws"
+// que de verdad importa en un portal "mobile"), "wss://site--backend-petcore--qfjc54hbttpk.code.run/ws"
 // apunta a la propia máquina del cliente, no al backend, y el socket nunca
 // llega a conectar. Sin la conexión, cada suscribir(evento, cb) se registra
 // igual (no lanza error) pero nunca recibe nada del servidor -- el fondo

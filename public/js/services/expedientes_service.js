@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/expedientes";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/expedientes";
 
 // GET /api/expedientes/mascota/{masId} — historial clínico de una mascota
 export async function obtenerExpedientesPorMascota(masId) {

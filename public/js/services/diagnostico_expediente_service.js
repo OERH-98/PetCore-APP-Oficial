@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/diagnosticos_expediente";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/diagnosticos_expediente";
 
 // GET /api/diagnosticos_expediente/expediente/{expId} — usado por
 // Notificaciones para avisar de un diagnóstico nuevo en el expediente.

@@ -1,4 +1,4 @@
-const API_URL = "https://petcore-8afada45fabc.herokuapp.com/api/servicios";
+const API_URL = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/servicios";
 
 // GET /api/servicios/activos — usado por nueva_cita.html para elegir servicio
 export const obtenerServiciosActivos = async () => {

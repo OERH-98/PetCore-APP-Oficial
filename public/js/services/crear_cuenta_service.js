@@ -6,7 +6,7 @@
    al correo que la clínica tiene guardado (nunca a uno que escriba quien lo
    pide). Contra /api/auth/registro/propietario.
    ========================================================================== */
-const API_URL_BASE = "https://petcore-8afada45fabc.herokuapp.com/api/auth/registro/propietario";
+const API_URL_BASE = "https://site--backend-petcore--qfjc54hbttpk.code.run/api/auth/registro/propietario";
 
 async function leerError(respuesta, mensajePorDefecto) {
     const cuerpo = await respuesta.json().catch(() => null);
